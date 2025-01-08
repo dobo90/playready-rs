@@ -1,0 +1,19 @@
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Dobroslaw Kijowski <dobo90@gmail.com>"]
+description = "Implementation of PlayReady DRM system based on pyplayready"
+homepage = "https://github.com/dobo90/playready-rs"
+repository = "https://github.com/dobo90/playready-rs"
+license = "MIT OR Apache-2.0 OR CC-BY-4.0"
+keywords = ["drm", "playready", "kodi"]
+categories = ["multimedia"]
+readme = "README.md"
+
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[patch.crates-io]
+elastic-elgamal = { git = "https://github.com/dobo90/elastic-elgamal", branch = 'main' }
+xml-builder = { git = "https://github.com/dobo90/xml-builder", branch = 'master' }

@@ -1,0 +1,17 @@
+[package]
+name = "playready-ffi"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lib]
+crate-type = ["staticlib", "lib"]
+
+[dependencies]
+playready = { path = "../playready" }
+safer-ffi = { version = "0.1", features = ["headers"] }
