@@ -7,7 +7,13 @@ use std::io::Cursor;
 
 #[derive(Debug, Clone)]
 /// Wrm header which is extracted from PSSH box.
-pub struct WrmHeader(pub String);
+pub struct WrmHeader(String);
+
+impl From<String> for WrmHeader {
+    fn from(value: String) -> Self {
+        WrmHeader(value)
+    }
+}
 
 impl From<WrmHeader> for String {
     fn from(value: WrmHeader) -> Self {
