@@ -62,7 +62,7 @@ fn test_device(path: impl AsRef<Path>) -> Result<(), playready::Error> {
 
     log::info!("Content keys:");
     for (kid, ck) in &keys {
-        log::info!("\t{}:{}", hex::encode(kid), hex::encode(ck));
+        log::info!("\t{kid}:{ck}");
     }
 
     Ok(())

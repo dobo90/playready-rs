@@ -18,6 +18,7 @@ cbc = { version = "0.1" }
 cmac = "0.7"
 ecb = { version = "0.1", features = ["std"] }
 elastic-elgamal = { version = "0.3", default-features = false, features = ["std"] }
+hex = "0.4"
 log = "0.4"
 p256 = { version = "0.13", default-features = false, features = ["arithmetic", "ecdsa", "std"] }
 rand = "0.8"

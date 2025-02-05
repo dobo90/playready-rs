@@ -35,7 +35,7 @@ impl From<WrmHeader> for FfiWrmHeader {
 #[repr(C)]
 pub struct FfiKidCk {
     pub kid: [u8; 16],
-    pub ck: repr_c::Vec<u8>,
+    pub ck: repr_c::Box<[u8]>,
 }
 
 /// Creates new instance of `Cdm` from path to `.prd` file.
@@ -159,8 +159,8 @@ pub fn playready_session_get_keys_from_challenge_response(
         Ok(keys) => Some(
             keys.into_iter()
                 .map(|kid_ck| FfiKidCk {
-                    kid: kid_ck.0,
-                    ck: kid_ck.1.into(),
+                    kid: kid_ck.0.into(),
+                    ck: Box::<[u8]>::from(kid_ck.1).into(),
                 })
                 .collect::<Vec<_>>()
                 .into(),

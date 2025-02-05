@@ -62,18 +62,36 @@ typedef struct {
 } uint8_16_array_t;
 
 /** \brief
- *  Same as [`Vec<T>`][`rust::Vec`], but with guaranteed `#[repr(C)]` layout
+ *  [`Box`][`rust::Box`]`<[T]>` (fat pointer to a slice),
+ *  but with a guaranteed `#[repr(C)]` layout.
+ *
+ *  # C layout (for some given type T)
+ *
+ *  ```c
+ *  typedef struct {
+ *  // Cannot be NULL
+ *  T * ptr;
+ *  size_t len;
+ *  } slice_T;
+ *  ```
+ *
+ *  # Nullable pointer?
+ *
+ *  If you want to support the above typedef, but where the `ptr` field is
+ *  allowed to be `NULL` (with the contents of `len` then being undefined)
+ *  use the `Option< slice_ptr<_> >` type.
  */
-typedef struct Vec_uint8 {
-    /** <No documentation available> */
+typedef struct slice_boxed_uint8 {
+    /** \brief
+     *  Pointer to the first element (if any).
+     */
     uint8_t * ptr;
 
-    /** <No documentation available> */
+    /** \brief
+     *  Element count
+     */
     size_t len;
-
-    /** <No documentation available> */
-    size_t cap;
-} Vec_uint8_t;
+} slice_boxed_uint8_t;
 
 /** <No documentation available> */
 typedef struct playready_kid_ck {
@@ -81,7 +99,7 @@ typedef struct playready_kid_ck {
     uint8_16_array_t kid;
 
     /** <No documentation available> */
-    Vec_uint8_t ck;
+    slice_boxed_uint8_t ck;
 } playready_kid_ck_t;
 
 /** \brief

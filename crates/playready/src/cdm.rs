@@ -13,6 +13,7 @@ use base64::{prelude::BASE64_STANDARD, Engine};
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use rand::{thread_rng, Rng};
 use std::{
+    fmt,
     sync::{atomic::AtomicU32, Arc},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -24,8 +25,108 @@ const RGB_MAGIC_CONSTANT_ZERO: [u8; 16] = [
     0x7e, 0xe9, 0xed, 0x4a, 0xf7, 0x73, 0x22, 0x4f, 0x00, 0xb8, 0xea, 0x7e, 0xfb, 0x02, 0x7c, 0xbb,
 ];
 
-type KidCkCi = ([u8; 16], Vec<u8>, Vec<u8>);
-type KidCk = ([u8; 16], Vec<u8>);
+/// Structure representing key id (KID).
+#[derive(Clone)]
+pub struct KeyId([u8; 16]);
+
+impl From<[u8; 16]> for KeyId {
+    fn from(value: [u8; 16]) -> Self {
+        KeyId(value)
+    }
+}
+
+impl From<KeyId> for [u8; 16] {
+    fn from(value: KeyId) -> Self {
+        value.0
+    }
+}
+
+impl AsRef<[u8]> for KeyId {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl fmt::Debug for KeyId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(hex::encode(self.0).as_str())
+    }
+}
+
+impl fmt::Display for KeyId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(hex::encode(self.0).as_str())
+    }
+}
+
+/// Structure representing content key.
+#[derive(Clone)]
+pub struct ContentKey(Box<[u8]>);
+
+impl From<Box<[u8]>> for ContentKey {
+    fn from(value: Box<[u8]>) -> Self {
+        ContentKey(value)
+    }
+}
+
+impl From<ContentKey> for Box<[u8]> {
+    fn from(value: ContentKey) -> Self {
+        value.0
+    }
+}
+
+impl AsRef<[u8]> for ContentKey {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl fmt::Debug for ContentKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(hex::encode(&self.0).as_str())
+    }
+}
+
+impl fmt::Display for ContentKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(hex::encode(&self.0).as_str())
+    }
+}
+
+struct ContentIntegrityKey(Box<[u8]>);
+
+impl From<Box<[u8]>> for ContentIntegrityKey {
+    fn from(value: Box<[u8]>) -> Self {
+        ContentIntegrityKey(value)
+    }
+}
+
+impl From<ContentIntegrityKey> for Box<[u8]> {
+    fn from(value: ContentIntegrityKey) -> Self {
+        value.0
+    }
+}
+
+impl AsRef<[u8]> for ContentIntegrityKey {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl fmt::Debug for ContentIntegrityKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(hex::encode(&self.0).as_str())
+    }
+}
+
+impl fmt::Display for ContentIntegrityKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(hex::encode(&self.0).as_str())
+    }
+}
+
+type KidCkCi = (KeyId, ContentKey, ContentIntegrityKey);
+type KidCk = (KeyId, ContentKey);
 
 /// The entry point of PlayReady CDM.
 ///
@@ -175,7 +276,7 @@ impl Session {
                     })
                     .ok()?;
 
-                aes::verify_cmac(&ci, msg, &signature)
+                aes::verify_cmac(ci.as_ref(), msg, &signature)
                     .inspect_err(|e| log::error!("Signature mismatch {e:?}. Skipping KID: {kid:?}"))
                     .ok()?;
 
@@ -291,7 +392,11 @@ impl Session {
         let uuid = Uuid::from_bytes_le(encrypted_key.1);
         let kid = *uuid.as_bytes();
 
-        Ok((kid, ck.to_vec(), ci))
+        Ok((
+            KeyId::from(kid),
+            ContentKey::from(ck.into_boxed_slice()),
+            ContentIntegrityKey::from(ci.into_boxed_slice()),
+        ))
     }
 
     fn cipher_data(&self) -> Result<Vec<u8>, crate::Error> {
