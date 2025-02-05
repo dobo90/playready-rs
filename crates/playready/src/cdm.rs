@@ -244,7 +244,7 @@ impl Session {
             .to_encoded_point(false);
         let device_public_key = &device_public_key.as_bytes()[1..];
 
-        let mut decrypted_keys = Vec::<KidCk>::new();
+        let mut decrypted_keys = Vec::<KidCk>::with_capacity(licenses.len());
 
         for license in licenses {
             let license = match License::from_b64(license.as_str()) {
