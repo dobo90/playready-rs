@@ -454,7 +454,8 @@ checksum = "60b1af1c220855b6ceac025d3f6ecdd2b7c4894bfe9cd9bda4fbb4bc7c0d4cf0"
 [[package]]
 name = "elastic-elgamal"
 version = "0.3.1"
-source = "git+https://github.com/dobo90/elastic-elgamal?branch=main#ce5ad9a02a616571ba49a2289a773785620cbb2a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b7b737834fb6420804fd46355adbcd23c99c733bd819d62860dfc84ed6638ac"
 dependencies = [
  "base64ct",
  "elliptic-curve",

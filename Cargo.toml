@@ -15,5 +15,4 @@ members = ["crates/*"]
 resolver = "2"
 
 [patch.crates-io]
-elastic-elgamal = { git = "https://github.com/dobo90/elastic-elgamal", branch = 'main' }
 xml-builder = { git = "https://github.com/dobo90/xml-builder", branch = 'master' }

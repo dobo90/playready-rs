@@ -4,14 +4,11 @@ use p256::{
         signature::{Signer, Verifier},
         Signature, SigningKey, VerifyingKey,
     },
-    elliptic_curve::{
-        sec1::{FromEncodedPoint, ToEncodedPoint},
-        PrimeField,
-    },
-    AffinePoint, EncodedPoint, FieldBytes, NistP256, ProjectivePoint, Scalar,
+    elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint},
+    AffinePoint, EncodedPoint, NistP256, ProjectivePoint,
 };
 
-use std::sync::OnceLock;
+use std::{ptr::copy_nonoverlapping, sync::OnceLock};
 
 pub type PublicKey = elastic_elgamal::PublicKey<Generic<NistP256>>;
 pub type SecretKey = elastic_elgamal::SecretKey<Generic<NistP256>>;
@@ -29,10 +26,9 @@ pub fn wmrm_public_key() -> &'static PublicKey {
             0xf2, 0xaf, 0x59, 0x57, 0xef, 0xee, 0xa5, 0x62,
         ];
 
-        let point = EncodedPoint::from_untagged_bytes(&WMRM_KEY.into());
-        let point = AffinePoint::from_encoded_point(&point).unwrap();
+        let point = EncodedPoint::from_untagged_bytes(&WMRM_KEY.into()).compress();
 
-        PublicKey::from_element(point.into())
+        PublicKey::from_bytes(point.as_bytes()).unwrap()
     })
 }
 
@@ -73,7 +69,21 @@ pub fn decrypt(private_key: &SecretKey, ciphertext: &[u8]) -> Result<Vec<u8>, cr
         .into_option()
         .ok_or(crate::Error::P256DecodeError)?;
 
-    let encrypted = Ciphertext::from_elements(random_element.into(), blinded_element.into());
+    let encrypted: Ciphertext<Generic<NistP256>> = Ciphertext::zero();
+
+    // TODO: Remove unsafe code once https://github.com/slowli/elastic-elgamal/pull/157 is merged
+    unsafe {
+        copy_nonoverlapping(
+            &random_element.into(),
+            encrypted.random_element() as *const ProjectivePoint as *mut ProjectivePoint,
+            1,
+        );
+        copy_nonoverlapping(
+            &blinded_element.into(),
+            encrypted.blinded_element() as *const ProjectivePoint as *mut ProjectivePoint,
+            1,
+        );
+    };
 
     let point = private_key
         .decrypt_to_element(encrypted)
@@ -83,12 +93,9 @@ pub fn decrypt(private_key: &SecretKey, ciphertext: &[u8]) -> Result<Vec<u8>, cr
 }
 
 pub fn create_key_pair_from_bytes(private_key: &[u8]) -> Result<Keypair, crate::Error> {
-    let private_key = FieldBytes::from_slice(private_key);
-    let private_key = Scalar::from_repr(*private_key)
-        .into_option()
-        .ok_or(crate::Error::P256DecodeError)?;
-
-    Ok(Keypair::from(SecretKey::new(private_key)))
+    Ok(Keypair::from(
+        SecretKey::from_bytes(private_key).ok_or(crate::Error::P256DecodeError)?,
+    ))
 }
 
 pub fn create_verifying_key_from_bytes(pub_key: &[u8]) -> Result<VerifyingKey, crate::Error> {
