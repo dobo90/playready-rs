@@ -1920,8 +1920,9 @@ checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
 
 [[package]]
 name = "xml-builder"
-version = "0.5.3"
-source = "git+https://github.com/dobo90/xml-builder?branch=master#20371e418b1f4b952fae13dfc0609ca0cc616da9"
+version = "0.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c023e38161c176b6ed516e2c398acd755cd19983661eff519b811c01646e10f"
 
 [[package]]
 name = "yoke"
