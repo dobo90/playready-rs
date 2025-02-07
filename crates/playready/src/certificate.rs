@@ -1,5 +1,6 @@
 //! Helper structs for accessing BCert and BCertChain binary formats.
 
+use crate::binary_format::StructTag;
 use binrw::BinRead;
 use std::io::Cursor;
 

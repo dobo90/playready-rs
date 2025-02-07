@@ -1130,6 +1130,7 @@ dependencies = [
  "hex",
  "log",
  "p256",
+ "playready-macros",
  "rand",
  "roxmltree",
  "sha2",
@@ -1155,6 +1156,15 @@ version = "0.1.0"
 dependencies = [
  "playready",
  "safer-ffi",
+]
+
+[[package]]
+name = "playready-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.96",
 ]
 
 [[package]]

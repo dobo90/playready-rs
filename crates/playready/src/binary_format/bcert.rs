@@ -1,10 +1,12 @@
 #![allow(dead_code)]
 
-use super::{size_rounded_up_to_custom_align, until_exact_number_of_bytes};
+use super::{size_rounded_up_to_custom_align, until_exact_number_of_bytes, StructTag};
 use binrw::{BinRead, PosValue};
+use playready_macros::StructTag;
 
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(1)]
 pub struct DrmBCertBasicInfo {
     pub cert_id: [u8; 16],
     pub security_level: u32,
@@ -15,15 +17,9 @@ pub struct DrmBCertBasicInfo {
     pub client_id: [u8; 16],
 }
 
-impl DrmBCertBasicInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        1
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(2)]
 pub struct DrmBCertDomainInfo {
     pub service_id: [u8; 16],
     pub account_id: [u8; 16],
@@ -33,54 +29,29 @@ pub struct DrmBCertDomainInfo {
     pub domain_url: Vec<u8>,
 }
 
-impl DrmBCertDomainInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        2
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(3)]
 pub struct DrmBCertPCInfo {
     pub security_version: u32,
 }
 
-impl DrmBCertPCInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        3
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(4)]
 pub struct DrmBCertDeviceInfo {
     pub max_license: u32,
     pub max_header: u32,
     pub max_chain_depth: u32,
 }
 
-impl DrmBCertDeviceInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        4
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(5)]
 pub struct DrmBCertFeatureInfo {
     pub feature_count: u32,
     #[br(count = feature_count)]
     pub features: Vec<u32>,
-}
-
-impl DrmBCertFeatureInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        5
-    }
 }
 
 #[derive(BinRead, Debug, Clone)]
@@ -96,23 +67,18 @@ pub struct DrmBCertKeyInfoInner {
     pub usages: Vec<u32>,
 }
 
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(6)]
 pub struct DrmBCertKeyInfo {
     pub key_count: u32,
     #[br(count = key_count)]
     pub cert_keys: Vec<DrmBCertKeyInfoInner>,
 }
 
-impl DrmBCertKeyInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        6
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(7)]
 pub struct DrmBCertManufacturerInfo {
     pub flags: u32,
     pub manufacturer_name_length: u32,
@@ -126,15 +92,9 @@ pub struct DrmBCertManufacturerInfo {
     pub model_number: Vec<u8>,
 }
 
-impl DrmBCertManufacturerInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        7
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(8)]
 pub struct DrmBCertSignatureInfo {
     pub signature_type: u16,
     pub signature_size: u16,
@@ -145,29 +105,17 @@ pub struct DrmBCertSignatureInfo {
     pub signature_key: Vec<u8>,
 }
 
-impl DrmBCertSignatureInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        8
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(9)]
 pub struct DrmBCertSilverlightInfo {
     pub security_version: u32,
     pub platform_identifier: u32,
 }
 
-impl DrmBCertSilverlightInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        9
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(10)]
 pub struct DrmBCertMeteringInfo {
     pub metering_id: [u8; 16],
     pub metering_url_length: u32,
@@ -175,28 +123,15 @@ pub struct DrmBCertMeteringInfo {
     pub metering_url: Vec<u8>,
 }
 
-impl DrmBCertMeteringInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        10
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(11)]
 pub struct DrmBCertExtDataSignKeyInfo {
     pub key_type: u16,
     pub key_length: u16,
     pub flags: u32,
     #[br(count = key_length / 8)]
     pub key: Vec<u8>,
-}
-
-impl DrmBCertExtDataSignKeyInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        11
-    }
 }
 
 #[derive(BinRead, Debug, Clone)]
@@ -207,8 +142,9 @@ pub struct BCertExtDataRecord {
     pub data: Vec<u8>,
 }
 
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(13)]
 pub struct DrmBCertExtDataSignature {
     pub signature_type: u16,
     pub signature_size: u16,
@@ -216,15 +152,9 @@ pub struct DrmBCertExtDataSignature {
     pub signature: Vec<u8>,
 }
 
-impl DrmBCertExtDataSignature {
-    #[inline]
-    pub const fn tag() -> u16 {
-        13
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(12)]
 pub struct BCertExtDataContainer {
     pub record_count: u32,
     #[br(count = record_count)]
@@ -232,38 +162,27 @@ pub struct BCertExtDataContainer {
     pub signature: DrmBCertExtDataSignature,
 }
 
-impl BCertExtDataContainer {
-    #[inline]
-    pub const fn tag() -> u16 {
-        12
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(15)]
 pub struct DrmBCertServerInfo {
     pub warning_days: u32,
 }
 
-impl DrmBCertServerInfo {
-    #[inline]
-    pub const fn tag() -> u16 {
-        15
-    }
-}
-
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructTag, Debug, Clone)]
 #[br(big)]
+#[struct_tag(16)]
 pub struct DrmBcertSecurityVersion {
     pub security_version: u32,
     pub platform_identifier: u32,
 }
 
-impl DrmBcertSecurityVersion {
-    #[inline]
-    pub const fn tags() -> [u16; 2] {
-        [16, 17]
-    }
+#[derive(BinRead, StructTag, Debug, Clone)]
+#[br(big)]
+#[struct_tag(17)]
+pub struct DrmBcertSecurityVersion2 {
+    pub security_version: u32,
+    pub platform_identifier: u32,
 }
 
 #[derive(BinRead, Debug, Clone)]
@@ -298,8 +217,10 @@ pub enum AttributeInner {
     DrmBCertExtDataSignature(DrmBCertExtDataSignature),
     #[br(pre_assert(tag == DrmBCertServerInfo::tag()))]
     DrmBCertServerInfo(DrmBCertServerInfo),
-    #[br(pre_assert(DrmBcertSecurityVersion::tags().contains(&tag)))]
+    #[br(pre_assert(tag == DrmBcertSecurityVersion::tag()))]
     DrmBcertSecurityVersion(DrmBcertSecurityVersion),
+    #[br(pre_assert(tag == DrmBcertSecurityVersion2::tag()))]
+    DrmBcertSecurityVersion2(DrmBcertSecurityVersion2),
     Unknown(#[br(count = length)] Vec<u8>),
 }
 

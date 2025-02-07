@@ -11,6 +11,10 @@ use std::{
     iter::from_fn,
 };
 
+pub trait StructTag {
+    fn tag() -> u16;
+}
+
 /// Returns the smallest multiple of `align` greater than or equal to `self.size()`.
 ///
 /// This can return at most `isize::MAX + 1`
