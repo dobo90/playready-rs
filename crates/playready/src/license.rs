@@ -1,4 +1,8 @@
-use crate::binary_format::xmr_license::{CipherType, XmrLicense, XmrObjectInner};
+use crate::binary_format::xmr_license::{
+    AuxiliaryKeysObject, CipherType, ContentKeyObject, ECCKeyObject, SignatureObject, XmrLicense,
+    XmrObjectInner,
+};
+use crate::binary_format::StructTag;
 use base64::{prelude::BASE64_STANDARD, Engine};
 use binrw::BinRead;
 use std::io::Cursor;
@@ -31,7 +35,7 @@ impl License {
             .parsed
             .containers
             .iter()
-            .find(|o| o.type_ == 0x2a)
+            .find(|o| o.type_ == ECCKeyObject::tag())
             .ok_or(crate::Error::BinaryObjectNotFoundError("ECCKeyObject"))?;
 
         match &ecc_key_object.data {
@@ -41,7 +45,11 @@ impl License {
     }
 
     pub fn auxiliary_key(&self) -> Option<[u8; 16]> {
-        let aux_key_object = self.parsed.containers.iter().find(|o| o.type_ == 0x51)?;
+        let aux_key_object = self
+            .parsed
+            .containers
+            .iter()
+            .find(|o| o.type_ == AuxiliaryKeysObject::tag())?;
 
         let aux_key_object = match &aux_key_object.data {
             XmrObjectInner::AuxiliaryKeysObject(inner) => Some(inner),
@@ -59,7 +67,7 @@ impl License {
         self.parsed
             .containers
             .iter()
-            .filter(|o| o.type_ == 0xa)
+            .filter(|o| o.type_ == ContentKeyObject::tag())
             .filter_map(|xmr_object| {
                 let content_key_object = match &xmr_object.data {
                     XmrObjectInner::ContentKeyObject(inner) => Some(inner),
@@ -80,7 +88,7 @@ impl License {
             .parsed
             .containers
             .iter()
-            .find(|o| o.type_ == 0xb)
+            .find(|o| o.type_ == SignatureObject::tag())
             .ok_or(crate::Error::BinaryObjectNotFoundError("SignatureObject"))?;
 
         match &signature_object.data {
