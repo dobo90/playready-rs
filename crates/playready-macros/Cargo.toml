@@ -1,9 +1,9 @@
 [package]
 name = "playready-macros"
+description = "Implementation of PlayReady DRM system based on pyplayready (helper macros)"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
-description.workspace = true
 homepage.workspace = true
 repository.workspace = true
 license.workspace = true

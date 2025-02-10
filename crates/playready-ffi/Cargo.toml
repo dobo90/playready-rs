@@ -1,5 +1,6 @@
 [package]
 name = "playready-ffi"
+description = "Implementation of PlayReady DRM system based on pyplayready (C bindings)"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -13,5 +14,5 @@ categories.workspace = true
 crate-type = ["staticlib", "lib"]
 
 [dependencies]
-playready = { path = "../playready" }
+playready = { path = "../playready", version = "0.1" }
 safer-ffi = { version = "0.1", features = ["headers"] }
