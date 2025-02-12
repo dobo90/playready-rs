@@ -1,5 +1,5 @@
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1-pre"
 edition = "2021"
 authors = ["Dobroslaw Kijowski <dobo90@gmail.com>"]
 description = "Implementation of PlayReady DRM system based on pyplayready"
