@@ -260,63 +260,63 @@ pub struct MoveObject {
 #[derive(BinRead, Debug, Clone)]
 #[br(big, import { type_: u16, length: u32})]
 pub enum XmrObjectInner {
-    #[br(pre_assert(type_ == OutputProtectionLevelRestrictionObject::tag()))]
+    #[br(pre_assert(type_ == OutputProtectionLevelRestrictionObject::TAG))]
     OutputProtectionLevelRestrictionObject(OutputProtectionLevelRestrictionObject),
-    #[br(pre_assert(type_ == AnalogVideoOutputConfigurationRestriction::tag()))]
+    #[br(pre_assert(type_ == AnalogVideoOutputConfigurationRestriction::TAG))]
     AnalogVideoOutputConfigurationRestriction(
         #[br(args(length))] AnalogVideoOutputConfigurationRestriction,
     ),
-    #[br(pre_assert(type_ == ContentKeyObject::tag()))]
+    #[br(pre_assert(type_ == ContentKeyObject::TAG))]
     ContentKeyObject(ContentKeyObject),
-    #[br(pre_assert(type_ == SignatureObject::tag()))]
+    #[br(pre_assert(type_ == SignatureObject::TAG))]
     SignatureObject(SignatureObject),
-    #[br(pre_assert(type_ == RightsSettingsObject::tag()))]
+    #[br(pre_assert(type_ == RightsSettingsObject::TAG))]
     RightsSettingsObject(RightsSettingsObject),
-    #[br(pre_assert(type_ == ExpirationRestrictionObject::tag()))]
+    #[br(pre_assert(type_ == ExpirationRestrictionObject::TAG))]
     ExpirationRestrictionObject(ExpirationRestrictionObject),
-    #[br(pre_assert(type_ == IssueDateObject::tag()))]
+    #[br(pre_assert(type_ == IssueDateObject::TAG))]
     IssueDateObject(IssueDateObject),
-    #[br(pre_assert(type_ == MeteringRestrictionObject::tag()))]
+    #[br(pre_assert(type_ == MeteringRestrictionObject::TAG))]
     MeteringRestrictionObject(MeteringRestrictionObject),
-    #[br(pre_assert(type_ == GracePeriodObject::tag()))]
+    #[br(pre_assert(type_ == GracePeriodObject::TAG))]
     GracePeriodObject(GracePeriodObject),
-    #[br(pre_assert(type_ == SourceIdObject::tag()))]
+    #[br(pre_assert(type_ == SourceIdObject::TAG))]
     SourceIdObject(SourceIdObject),
-    #[br(pre_assert(type_ == ECCKeyObject::tag()))]
+    #[br(pre_assert(type_ == ECCKeyObject::TAG))]
     ECCKeyObject(ECCKeyObject),
-    #[br(pre_assert(type_ == PolicyMetadataObject::tag()))]
+    #[br(pre_assert(type_ == PolicyMetadataObject::TAG))]
     PolicyMetadataObject(#[br(args(length))] PolicyMetadataObject),
-    #[br(pre_assert(type_ == DomainRestrictionObject::tag()))]
+    #[br(pre_assert(type_ == DomainRestrictionObject::TAG))]
     DomainRestrictionObject(DomainRestrictionObject),
-    #[br(pre_assert(type_ == ExpirationAfterFirstPlayRestrictionObject::tag()))]
+    #[br(pre_assert(type_ == ExpirationAfterFirstPlayRestrictionObject::TAG))]
     ExpirationAfterFirstPlayRestrictionObject(ExpirationAfterFirstPlayRestrictionObject),
-    #[br(pre_assert(type_ == DigitalAudioOutputRestrictionObject::tag()))]
+    #[br(pre_assert(type_ == DigitalAudioOutputRestrictionObject::TAG))]
     DigitalAudioOutputRestrictionObject(#[br(args(length))] DigitalAudioOutputRestrictionObject),
-    #[br(pre_assert(type_ == RevInfoVersionObject::tag()))]
+    #[br(pre_assert(type_ == RevInfoVersionObject::TAG))]
     RevInfoVersionObject(RevInfoVersionObject),
-    #[br(pre_assert(type_ == EmbeddedLicenseSettingsObject::tag()))]
+    #[br(pre_assert(type_ == EmbeddedLicenseSettingsObject::TAG))]
     EmbeddedLicenseSettingsObject(EmbeddedLicenseSettingsObject),
-    #[br(pre_assert(type_ == SecurityLevelObject::tag()))]
+    #[br(pre_assert(type_ == SecurityLevelObject::TAG))]
     SecurityLevelObject(SecurityLevelObject),
-    #[br(pre_assert(type_ == MoveObject::tag()))]
+    #[br(pre_assert(type_ == MoveObject::TAG))]
     MoveObject(MoveObject),
-    #[br(pre_assert(type_ == PlayEnablerType::tag()))]
+    #[br(pre_assert(type_ == PlayEnablerType::TAG))]
     PlayEnablerType(PlayEnablerType),
-    #[br(pre_assert(type_ == CopyEnablerObject::tag()))]
+    #[br(pre_assert(type_ == CopyEnablerObject::TAG))]
     CopyEnablerObject(CopyEnablerObject),
-    #[br(pre_assert(type_ == UplinkKIDObject::tag()))]
+    #[br(pre_assert(type_ == UplinkKIDObject::TAG))]
     UplinkKIDObject(UplinkKIDObject),
-    #[br(pre_assert(type_ == CopyCountRestrictionObject::tag()))]
+    #[br(pre_assert(type_ == CopyCountRestrictionObject::TAG))]
     CopyCountRestrictionObject(CopyCountRestrictionObject),
-    #[br(pre_assert(type_ == RemovalDateObject::tag()))]
+    #[br(pre_assert(type_ == RemovalDateObject::TAG))]
     RemovalDateObject(RemovalDateObject),
-    #[br(pre_assert(type_ == AuxiliaryKeysObject::tag()))]
+    #[br(pre_assert(type_ == AuxiliaryKeysObject::TAG))]
     AuxiliaryKeysObject(AuxiliaryKeysObject),
-    #[br(pre_assert(type_ == UplinkKeyObject3::tag()))]
+    #[br(pre_assert(type_ == UplinkKeyObject3::TAG))]
     UplinkKeyObject3(UplinkKeyObject3),
-    #[br(pre_assert(type_ == SecureStopRestrictionObject::tag()))]
+    #[br(pre_assert(type_ == SecureStopRestrictionObject::TAG))]
     SecureStopRestrictionObject(SecureStopRestrictionObject),
-    #[br(pre_assert(type_ == DigitalVideoOutputRestrictionObject::tag()))]
+    #[br(pre_assert(type_ == DigitalVideoOutputRestrictionObject::TAG))]
     DigitalVideoOutputRestrictionObject(#[br(args(length))] DigitalVideoOutputRestrictionObject),
     Unknown(#[br(count = length)] Vec<u8>),
 }

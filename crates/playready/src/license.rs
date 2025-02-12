@@ -35,7 +35,7 @@ impl License {
             .parsed
             .containers
             .iter()
-            .find(|o| o.type_ == ECCKeyObject::tag())
+            .find(|o| o.type_ == ECCKeyObject::TAG)
             .ok_or(crate::Error::BinaryObjectNotFoundError("ECCKeyObject"))?;
 
         match &ecc_key_object.data {
@@ -49,7 +49,7 @@ impl License {
             .parsed
             .containers
             .iter()
-            .find(|o| o.type_ == AuxiliaryKeysObject::tag())?;
+            .find(|o| o.type_ == AuxiliaryKeysObject::TAG)?;
 
         let aux_key_object = match &aux_key_object.data {
             XmrObjectInner::AuxiliaryKeysObject(inner) => Some(inner),
@@ -67,7 +67,7 @@ impl License {
         self.parsed
             .containers
             .iter()
-            .filter(|o| o.type_ == ContentKeyObject::tag())
+            .filter(|o| o.type_ == ContentKeyObject::TAG)
             .filter_map(|xmr_object| {
                 let content_key_object = match &xmr_object.data {
                     XmrObjectInner::ContentKeyObject(inner) => Some(inner),
@@ -88,7 +88,7 @@ impl License {
             .parsed
             .containers
             .iter()
-            .find(|o| o.type_ == SignatureObject::tag())
+            .find(|o| o.type_ == SignatureObject::TAG)
             .ok_or(crate::Error::BinaryObjectNotFoundError("SignatureObject"))?;
 
         match &signature_object.data {

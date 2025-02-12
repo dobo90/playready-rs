@@ -12,7 +12,7 @@ use std::{
 };
 
 pub trait StructTag {
-    fn tag() -> u16;
+    const TAG: u16;
 }
 
 /// Returns the smallest multiple of `align` greater than or equal to `self.size()`.

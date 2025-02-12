@@ -189,37 +189,37 @@ pub struct DrmBcertSecurityVersion2 {
 #[br(big, import { tag: u16, length: u32 })]
 
 pub enum AttributeInner {
-    #[br(pre_assert(tag == DrmBCertBasicInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertBasicInfo::TAG))]
     DrmBCertBasicInfo(DrmBCertBasicInfo),
-    #[br(pre_assert(tag == DrmBCertDomainInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertDomainInfo::TAG))]
     DrmBCertDomainInfo(DrmBCertDomainInfo),
-    #[br(pre_assert(tag == DrmBCertPCInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertPCInfo::TAG))]
     DrmBCertPCInfo(DrmBCertPCInfo),
-    #[br(pre_assert(tag == DrmBCertDeviceInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertDeviceInfo::TAG))]
     DrmBCertDeviceInfo(DrmBCertDeviceInfo),
-    #[br(pre_assert(tag == DrmBCertFeatureInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertFeatureInfo::TAG))]
     DrmBCertFeatureInfo(DrmBCertFeatureInfo),
-    #[br(pre_assert(tag == DrmBCertKeyInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertKeyInfo::TAG))]
     DrmBCertKeyInfo(DrmBCertKeyInfo),
-    #[br(pre_assert(tag == DrmBCertManufacturerInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertManufacturerInfo::TAG))]
     DrmBCertManufacturerInfo(DrmBCertManufacturerInfo),
-    #[br(pre_assert(tag == DrmBCertSignatureInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertSignatureInfo::TAG))]
     DrmBCertSignatureInfo(DrmBCertSignatureInfo),
-    #[br(pre_assert(tag == DrmBCertSilverlightInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertSilverlightInfo::TAG))]
     DrmBCertSilverlightInfo(DrmBCertSilverlightInfo),
-    #[br(pre_assert(tag == DrmBCertMeteringInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertMeteringInfo::TAG))]
     DrmBCertMeteringInfo(DrmBCertMeteringInfo),
-    #[br(pre_assert(tag == DrmBCertExtDataSignKeyInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertExtDataSignKeyInfo::TAG))]
     DrmBCertExtDataSignKeyInfo(DrmBCertExtDataSignKeyInfo),
-    #[br(pre_assert(tag == BCertExtDataContainer::tag()))]
+    #[br(pre_assert(tag == BCertExtDataContainer::TAG))]
     BCertExtDataContainer(BCertExtDataContainer),
-    #[br(pre_assert(tag == DrmBCertExtDataSignature::tag()))]
+    #[br(pre_assert(tag == DrmBCertExtDataSignature::TAG))]
     DrmBCertExtDataSignature(DrmBCertExtDataSignature),
-    #[br(pre_assert(tag == DrmBCertServerInfo::tag()))]
+    #[br(pre_assert(tag == DrmBCertServerInfo::TAG))]
     DrmBCertServerInfo(DrmBCertServerInfo),
-    #[br(pre_assert(tag == DrmBcertSecurityVersion::tag()))]
+    #[br(pre_assert(tag == DrmBcertSecurityVersion::TAG))]
     DrmBcertSecurityVersion(DrmBcertSecurityVersion),
-    #[br(pre_assert(tag == DrmBcertSecurityVersion2::tag()))]
+    #[br(pre_assert(tag == DrmBcertSecurityVersion2::TAG))]
     DrmBcertSecurityVersion2(DrmBcertSecurityVersion2),
     Unknown(#[br(count = length)] Vec<u8>),
 }

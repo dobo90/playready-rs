@@ -3,7 +3,7 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
 #[proc_macro_derive(StructTag, attributes(struct_tag))]
-pub fn derive(input: TokenStream) -> TokenStream {
+pub fn derive_struct_tag(input: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(input);
     let ident = &input.ident;
 
@@ -17,10 +17,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
     let output = quote! {
         impl StructTag for #ident {
-            #[inline]
-            fn tag() -> u16 {
-                #tag
-            }
+            const TAG: u16 = #tag;
         }
     };
 

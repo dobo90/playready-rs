@@ -48,7 +48,7 @@ impl Certificate {
             .parsed
             .attributes
             .iter()
-            .find(|a| a.tag == DrmBCertKeyInfo::tag())?;
+            .find(|a| a.tag == DrmBCertKeyInfo::TAG)?;
 
         let cert_info = match &attribute.inner {
             AttributeInner::DrmBCertKeyInfo(inner) => Some(inner),
@@ -69,7 +69,7 @@ impl Certificate {
             .parsed
             .attributes
             .iter()
-            .find(|a| a.tag == DrmBCertSignatureInfo::tag())
+            .find(|a| a.tag == DrmBCertSignatureInfo::TAG)
             .ok_or(crate::Error::BinaryObjectNotFoundError(
                 "DrmBCertSignatureInfo",
             ))?;
@@ -157,7 +157,7 @@ impl CertificateChain {
 
         let attribute = attributes
             .iter()
-            .find(|a| a.tag == DrmBCertBasicInfo::tag())
+            .find(|a| a.tag == DrmBCertBasicInfo::TAG)
             .ok_or(crate::Error::BinaryObjectNotFoundError("DrmBCertBasicInfo"))?;
 
         match &attribute.inner {
@@ -184,7 +184,7 @@ impl CertificateChain {
 
         let attribute = attributes
             .iter()
-            .find(|a| a.tag == DrmBCertManufacturerInfo::tag())
+            .find(|a| a.tag == DrmBCertManufacturerInfo::TAG)
             .ok_or(crate::Error::BinaryObjectNotFoundError(
                 "DrmBCertManufacturerInfo",
             ))?;
