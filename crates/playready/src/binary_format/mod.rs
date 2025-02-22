@@ -116,6 +116,20 @@ where
     }
 }
 
+fn trim_and_pad_cstr(cstr: &mut Vec<u8>) -> usize {
+    if cstr.is_empty() {
+        return 0;
+    }
+
+    let len = cstr.iter().take_while(|b| **b != b'\x00').count() + 1;
+    let padding_size = size_rounded_up_to_custom_align(len, 4) - len;
+
+    cstr.truncate(len);
+    cstr.append(&mut vec![b'\x00'; padding_size]);
+
+    len
+}
+
 #[derive(Clone)]
 pub struct ValueAndRaw<T> {
     pub val: T,

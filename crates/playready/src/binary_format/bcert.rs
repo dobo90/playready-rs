@@ -1,14 +1,18 @@
 #![allow(dead_code)]
 
 use super::{
-    size_rounded_up_to_custom_align, until_exact_number_of_bytes, StructRawSize, StructTag,
-    ValueAndRaw,
+    size_rounded_up_to_custom_align, trim_and_pad_cstr, until_exact_number_of_bytes, StructRawSize,
+    StructTag, ValueAndRaw,
 };
-use binrw::BinRead;
+use binrw::{BinRead, BinWrite};
 use playready_macros::{StructRawSize, StructTag};
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+pub trait PreprocessWrite {
+    fn preprocess_write(&mut self);
+}
+
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(1)]
 pub struct DrmBCertBasicInfo {
     pub cert_id: [u8; 16],
@@ -20,8 +24,8 @@ pub struct DrmBCertBasicInfo {
     pub client_id: [u8; 16],
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(2)]
 pub struct DrmBCertDomainInfo {
     pub service_id: [u8; 16],
@@ -32,15 +36,22 @@ pub struct DrmBCertDomainInfo {
     pub domain_url: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for DrmBCertDomainInfo {
+    fn preprocess_write(&mut self) {
+        let domain_url_length = trim_and_pad_cstr(&mut self.domain_url);
+        self.domain_url_length = u32::try_from(domain_url_length).unwrap();
+    }
+}
+
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(3)]
 pub struct DrmBCertPCInfo {
     pub security_version: u32,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(4)]
 pub struct DrmBCertDeviceInfo {
     pub max_license: u32,
@@ -48,8 +59,8 @@ pub struct DrmBCertDeviceInfo {
     pub max_chain_depth: u32,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(5)]
 pub struct DrmBCertFeatureInfo {
     pub feature_count: u32,
@@ -57,8 +68,14 @@ pub struct DrmBCertFeatureInfo {
     pub features: Vec<u32>,
 }
 
-#[derive(BinRead, StructRawSize, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for DrmBCertFeatureInfo {
+    fn preprocess_write(&mut self) {
+        self.feature_count = u32::try_from(self.features.len()).unwrap();
+    }
+}
+
+#[derive(BinRead, BinWrite, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 pub struct DrmBCertKeyInfoInner {
     pub type_: u16,
     pub length: u16,
@@ -70,8 +87,15 @@ pub struct DrmBCertKeyInfoInner {
     pub usages: Vec<u32>,
 }
 
-#[derive(BinRead, StructRawSize, StructTag, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for DrmBCertKeyInfoInner {
+    fn preprocess_write(&mut self) {
+        self.length = u16::try_from(self.key.len()).unwrap() * 8;
+        self.usages_count = u32::try_from(self.usages.len()).unwrap();
+    }
+}
+
+#[derive(BinRead, BinWrite, StructRawSize, StructTag, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(6)]
 pub struct DrmBCertKeyInfo {
     pub key_count: u32,
@@ -79,8 +103,18 @@ pub struct DrmBCertKeyInfo {
     pub cert_keys: Vec<DrmBCertKeyInfoInner>,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for DrmBCertKeyInfo {
+    fn preprocess_write(&mut self) {
+        for cert_key in &mut self.cert_keys {
+            cert_key.preprocess_write();
+        }
+
+        self.key_count = u32::try_from(self.cert_keys.len()).unwrap();
+    }
+}
+
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(7)]
 pub struct DrmBCertManufacturerInfo {
     pub flags: u32,
@@ -95,8 +129,20 @@ pub struct DrmBCertManufacturerInfo {
     pub model_number: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for DrmBCertManufacturerInfo {
+    fn preprocess_write(&mut self) {
+        let manufacturer_name_length = trim_and_pad_cstr(&mut self.manufacturer_name);
+        let model_name_length = trim_and_pad_cstr(&mut self.model_name);
+        let model_number_length = trim_and_pad_cstr(&mut self.model_number);
+
+        self.manufacturer_name_length = u32::try_from(manufacturer_name_length).unwrap();
+        self.model_name_length = u32::try_from(model_name_length).unwrap();
+        self.model_number_length = u32::try_from(model_number_length).unwrap();
+    }
+}
+
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(8)]
 pub struct DrmBCertSignatureInfo {
     pub signature_type: u16,
@@ -108,16 +154,23 @@ pub struct DrmBCertSignatureInfo {
     pub signature_key: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for DrmBCertSignatureInfo {
+    fn preprocess_write(&mut self) {
+        self.signature_size = u16::try_from(self.signature.len()).unwrap();
+        self.signature_key_size = u32::try_from(self.signature_key.len()).unwrap() * 8;
+    }
+}
+
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(9)]
 pub struct DrmBCertSilverlightInfo {
     pub security_version: u32,
     pub platform_identifier: u32,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(10)]
 pub struct DrmBCertMeteringInfo {
     pub metering_id: [u8; 16],
@@ -126,8 +179,15 @@ pub struct DrmBCertMeteringInfo {
     pub metering_url: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for DrmBCertMeteringInfo {
+    fn preprocess_write(&mut self) {
+        let metering_url_length = trim_and_pad_cstr(&mut self.metering_url);
+        self.metering_url_length = u32::try_from(metering_url_length).unwrap();
+    }
+}
+
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(11)]
 pub struct DrmBCertExtDataSignKeyInfo {
     pub key_type: u16,
@@ -137,16 +197,28 @@ pub struct DrmBCertExtDataSignKeyInfo {
     pub key: Vec<u8>,
 }
 
-#[derive(BinRead, StructRawSize, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for DrmBCertExtDataSignKeyInfo {
+    fn preprocess_write(&mut self) {
+        self.key_length = u16::try_from(self.key.len()).unwrap() * 8;
+    }
+}
+
+#[derive(BinRead, BinWrite, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 pub struct BCertExtDataRecord {
     pub data_size: u32,
     #[br(count = data_size)]
     pub data: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for BCertExtDataRecord {
+    fn preprocess_write(&mut self) {
+        self.data_size = u32::try_from(self.data.len()).unwrap();
+    }
+}
+
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(13)]
 pub struct DrmBCertExtDataSignature {
     pub signature_type: u16,
@@ -155,8 +227,14 @@ pub struct DrmBCertExtDataSignature {
     pub signature: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for DrmBCertExtDataSignature {
+    fn preprocess_write(&mut self) {
+        self.signature_size = u16::try_from(self.signature.len()).unwrap();
+    }
+}
+
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(12)]
 pub struct BCertExtDataContainer {
     pub record_count: u32,
@@ -165,32 +243,42 @@ pub struct BCertExtDataContainer {
     pub signature: DrmBCertExtDataSignature,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for BCertExtDataContainer {
+    fn preprocess_write(&mut self) {
+        for record in &mut self.records {
+            record.preprocess_write();
+        }
+
+        self.record_count = u32::try_from(self.records.len()).unwrap();
+    }
+}
+
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(15)]
 pub struct DrmBCertServerInfo {
     pub warning_days: u32,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(16)]
 pub struct DrmBcertSecurityVersion {
     pub security_version: u32,
     pub platform_identifier: u32,
 }
 
-#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
-#[br(big)]
+#[derive(BinRead, BinWrite, StructTag, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 #[struct_tag(17)]
 pub struct DrmBcertSecurityVersion2 {
     pub security_version: u32,
     pub platform_identifier: u32,
 }
 
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, BinWrite, Debug, Clone)]
 #[br(big, import { tag: u16, length: u32 })]
-
+#[bw(big)]
 pub enum AttributeInner {
     #[br(pre_assert(tag == DrmBCertBasicInfo::TAG))]
     DrmBCertBasicInfo(DrmBCertBasicInfo),
@@ -227,6 +315,12 @@ pub enum AttributeInner {
     Unknown(#[br(count = length)] Vec<u8>),
 }
 
+impl Default for AttributeInner {
+    fn default() -> Self {
+        Self::Unknown(vec![])
+    }
+}
+
 impl StructRawSize for AttributeInner {
     fn get_raw_size(&self) -> usize {
         match self {
@@ -251,9 +345,49 @@ impl StructRawSize for AttributeInner {
     }
 }
 
-#[derive(BinRead, StructRawSize, Debug, Clone)]
-#[br(big)]
+impl PreprocessWrite for AttributeInner {
+    fn preprocess_write(&mut self) {
+        match self {
+            AttributeInner::DrmBCertDomainInfo(inner) => inner.preprocess_write(),
+            AttributeInner::DrmBCertFeatureInfo(inner) => inner.preprocess_write(),
+            AttributeInner::DrmBCertKeyInfo(inner) => inner.preprocess_write(),
+            AttributeInner::DrmBCertManufacturerInfo(inner) => inner.preprocess_write(),
+            AttributeInner::DrmBCertSignatureInfo(inner) => inner.preprocess_write(),
+            AttributeInner::DrmBCertMeteringInfo(inner) => inner.preprocess_write(),
+            AttributeInner::DrmBCertExtDataSignKeyInfo(inner) => inner.preprocess_write(),
+            AttributeInner::BCertExtDataContainer(inner) => inner.preprocess_write(),
+            AttributeInner::DrmBCertExtDataSignature(inner) => inner.preprocess_write(),
+            _ => (),
+        }
+    }
+}
 
+impl AttributeInner {
+    fn get_tag(&self) -> Option<u16> {
+        match self {
+            AttributeInner::DrmBCertBasicInfo(_) => Some(DrmBCertBasicInfo::TAG),
+            AttributeInner::DrmBCertDomainInfo(_) => Some(DrmBCertDomainInfo::TAG),
+            AttributeInner::DrmBCertPCInfo(_) => Some(DrmBCertPCInfo::TAG),
+            AttributeInner::DrmBCertDeviceInfo(_) => Some(DrmBCertDeviceInfo::TAG),
+            AttributeInner::DrmBCertFeatureInfo(_) => Some(DrmBCertFeatureInfo::TAG),
+            AttributeInner::DrmBCertKeyInfo(_) => Some(DrmBCertKeyInfo::TAG),
+            AttributeInner::DrmBCertManufacturerInfo(_) => Some(DrmBCertManufacturerInfo::TAG),
+            AttributeInner::DrmBCertSignatureInfo(_) => Some(DrmBCertSignatureInfo::TAG),
+            AttributeInner::DrmBCertSilverlightInfo(_) => Some(DrmBCertSilverlightInfo::TAG),
+            AttributeInner::DrmBCertMeteringInfo(_) => Some(DrmBCertMeteringInfo::TAG),
+            AttributeInner::DrmBCertExtDataSignKeyInfo(_) => Some(DrmBCertExtDataSignKeyInfo::TAG),
+            AttributeInner::BCertExtDataContainer(_) => Some(BCertExtDataContainer::TAG),
+            AttributeInner::DrmBCertExtDataSignature(_) => Some(DrmBCertExtDataSignature::TAG),
+            AttributeInner::DrmBCertServerInfo(_) => Some(DrmBCertServerInfo::TAG),
+            AttributeInner::DrmBcertSecurityVersion(_) => Some(DrmBcertSecurityVersion::TAG),
+            AttributeInner::DrmBcertSecurityVersion2(_) => Some(DrmBcertSecurityVersion2::TAG),
+            AttributeInner::Unknown(_) => None,
+        }
+    }
+}
+
+#[derive(BinRead, BinWrite, StructRawSize, Debug, Clone, Default)]
+#[brw(big)]
 pub struct Attribute {
     pub flags: u16,
     pub tag: u16,
@@ -263,8 +397,17 @@ pub struct Attribute {
     pub inner: AttributeInner,
 }
 
-#[derive(BinRead, Debug, Clone)]
-#[br(big, magic = b"CERT")]
+impl PreprocessWrite for Attribute {
+    fn preprocess_write(&mut self) {
+        self.inner.preprocess_write();
+
+        self.length = u32::try_from(self.get_raw_size()).unwrap();
+        self.tag = self.inner.get_tag().unwrap_or(self.tag);
+    }
+}
+
+#[derive(BinRead, BinWrite, Debug, Clone, Default)]
+#[brw(big, magic = b"CERT")]
 pub struct BCert {
     pub version: u32,
     pub total_length: u32,
@@ -274,8 +417,39 @@ pub struct BCert {
     pub attributes: Vec<Attribute>,
 }
 
-#[derive(BinRead, Debug, Clone)]
-#[br(big, magic = b"CHAI")]
+impl BCert {
+    fn certificate_size(&self) -> Option<usize> {
+        match &self.attributes.last() {
+            Some(attr) => match &attr.inner {
+                AttributeInner::DrmBCertSignatureInfo(_) => Some(attr.get_raw_size()),
+                _ => {
+                    log::error!("DrmBCertSignatureInfo has to be the last attribute");
+                    None
+                }
+            },
+            None => {
+                log::error!("Missing attribute");
+                None
+            }
+        }
+    }
+}
+
+impl PreprocessWrite for BCert {
+    fn preprocess_write(&mut self) {
+        for attribute in &mut self.attributes {
+            attribute.preprocess_write();
+        }
+
+        // total_length = attributes size + b"CERT".len() + sizeof(version) + sizeof(total_length) + sizeof(certificate_length)
+        self.total_length = self.attributes.iter().map(|a| a.length).sum::<u32>() + 4 * 4;
+        self.certificate_length =
+            self.total_length - u32::try_from(self.certificate_size().unwrap_or_default()).unwrap();
+    }
+}
+
+#[derive(BinRead, BinWrite, Debug, Clone, Default)]
+#[brw(big, magic = b"CHAI")]
 pub struct BCertChain {
     pub version: u32,
     pub total_length: u32,
@@ -283,4 +457,23 @@ pub struct BCertChain {
     pub certificate_count: u32,
     #[br(count = certificate_count)]
     pub certificates: Vec<ValueAndRaw<BCert>>,
+}
+
+impl PreprocessWrite for BCertChain {
+    fn preprocess_write(&mut self) {
+        for certificate in &mut self.certificates {
+            if !certificate.use_raw {
+                certificate.val.preprocess_write();
+            }
+        }
+
+        self.certificate_count = u32::try_from(self.certificates.len()).unwrap();
+        // total_length = certificates_length + b"CHAI".len() + sizeof(version) + sizeof(total_length) + sizeof(flags) + sizeof(certificate_count)
+        self.total_length = self
+            .certificates
+            .iter()
+            .map(|c| c.total_length)
+            .sum::<u32>()
+            + 4 * 5;
+    }
 }
