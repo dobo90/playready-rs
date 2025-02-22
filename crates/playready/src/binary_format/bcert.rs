@@ -1,10 +1,12 @@
 #![allow(dead_code)]
 
-use super::{size_rounded_up_to_custom_align, until_exact_number_of_bytes, StructTag};
+use super::{
+    size_rounded_up_to_custom_align, until_exact_number_of_bytes, StructRawSize, StructTag,
+};
 use binrw::{BinRead, PosValue};
-use playready_macros::StructTag;
+use playready_macros::{StructRawSize, StructTag};
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(1)]
 pub struct DrmBCertBasicInfo {
@@ -17,7 +19,7 @@ pub struct DrmBCertBasicInfo {
     pub client_id: [u8; 16],
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(2)]
 pub struct DrmBCertDomainInfo {
@@ -29,14 +31,14 @@ pub struct DrmBCertDomainInfo {
     pub domain_url: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(3)]
 pub struct DrmBCertPCInfo {
     pub security_version: u32,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(4)]
 pub struct DrmBCertDeviceInfo {
@@ -45,7 +47,7 @@ pub struct DrmBCertDeviceInfo {
     pub max_chain_depth: u32,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(5)]
 pub struct DrmBCertFeatureInfo {
@@ -54,7 +56,7 @@ pub struct DrmBCertFeatureInfo {
     pub features: Vec<u32>,
 }
 
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructRawSize, Debug, Clone)]
 #[br(big)]
 pub struct DrmBCertKeyInfoInner {
     pub type_: u16,
@@ -67,7 +69,7 @@ pub struct DrmBCertKeyInfoInner {
     pub usages: Vec<u32>,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructRawSize, StructTag, Debug, Clone)]
 #[br(big)]
 #[struct_tag(6)]
 pub struct DrmBCertKeyInfo {
@@ -76,7 +78,7 @@ pub struct DrmBCertKeyInfo {
     pub cert_keys: Vec<DrmBCertKeyInfoInner>,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(7)]
 pub struct DrmBCertManufacturerInfo {
@@ -92,7 +94,7 @@ pub struct DrmBCertManufacturerInfo {
     pub model_number: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(8)]
 pub struct DrmBCertSignatureInfo {
@@ -105,7 +107,7 @@ pub struct DrmBCertSignatureInfo {
     pub signature_key: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(9)]
 pub struct DrmBCertSilverlightInfo {
@@ -113,7 +115,7 @@ pub struct DrmBCertSilverlightInfo {
     pub platform_identifier: u32,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(10)]
 pub struct DrmBCertMeteringInfo {
@@ -123,7 +125,7 @@ pub struct DrmBCertMeteringInfo {
     pub metering_url: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(11)]
 pub struct DrmBCertExtDataSignKeyInfo {
@@ -134,7 +136,7 @@ pub struct DrmBCertExtDataSignKeyInfo {
     pub key: Vec<u8>,
 }
 
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, StructRawSize, Debug, Clone)]
 #[br(big)]
 pub struct BCertExtDataRecord {
     pub data_size: u32,
@@ -142,7 +144,7 @@ pub struct BCertExtDataRecord {
     pub data: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(13)]
 pub struct DrmBCertExtDataSignature {
@@ -152,7 +154,7 @@ pub struct DrmBCertExtDataSignature {
     pub signature: Vec<u8>,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(12)]
 pub struct BCertExtDataContainer {
@@ -162,14 +164,14 @@ pub struct BCertExtDataContainer {
     pub signature: DrmBCertExtDataSignature,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(15)]
 pub struct DrmBCertServerInfo {
     pub warning_days: u32,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(16)]
 pub struct DrmBcertSecurityVersion {
@@ -177,7 +179,7 @@ pub struct DrmBcertSecurityVersion {
     pub platform_identifier: u32,
 }
 
-#[derive(BinRead, StructTag, Debug, Clone)]
+#[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
 #[br(big)]
 #[struct_tag(17)]
 pub struct DrmBcertSecurityVersion2 {
@@ -224,7 +226,31 @@ pub enum AttributeInner {
     Unknown(#[br(count = length)] Vec<u8>),
 }
 
-#[derive(BinRead, Debug, Clone)]
+impl StructRawSize for AttributeInner {
+    fn get_raw_size(&self) -> usize {
+        match self {
+            AttributeInner::DrmBCertBasicInfo(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertDomainInfo(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertPCInfo(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertDeviceInfo(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertFeatureInfo(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertKeyInfo(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertManufacturerInfo(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertSignatureInfo(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertSilverlightInfo(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertMeteringInfo(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertExtDataSignKeyInfo(inner) => inner.get_raw_size(),
+            AttributeInner::BCertExtDataContainer(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertExtDataSignature(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBCertServerInfo(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBcertSecurityVersion(inner) => inner.get_raw_size(),
+            AttributeInner::DrmBcertSecurityVersion2(inner) => inner.get_raw_size(),
+            AttributeInner::Unknown(items) => items.len() * std::mem::size_of::<u8>(),
+        }
+    }
+}
+
+#[derive(BinRead, StructRawSize, Debug, Clone)]
 #[br(big)]
 
 pub struct Attribute {

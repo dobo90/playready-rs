@@ -23,3 +23,29 @@ pub fn derive_struct_tag(input: TokenStream) -> TokenStream {
 
     output.into()
 }
+
+#[proc_macro_derive(StructRawSize)]
+pub fn derive_size(input: TokenStream) -> TokenStream {
+    let input: DeriveInput = parse_macro_input!(input);
+    let ident = &input.ident;
+
+    let data = match input.data {
+        syn::Data::Struct(data_struct) => data_struct,
+        _ => unimplemented!(),
+    };
+
+    let fields = data.fields.iter().map(|field| {
+        let ident = &field.ident;
+        quote! { self.#ident.get_raw_size() }
+    });
+
+    quote! {
+        impl StructRawSize for #ident {
+            #[inline]
+            fn get_raw_size(&self) -> usize {
+                0 #(+ #fields)*
+            }
+        }
+    }
+    .into()
+}

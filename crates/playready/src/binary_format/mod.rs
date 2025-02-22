@@ -15,6 +15,40 @@ pub trait StructTag {
     const TAG: u16;
 }
 
+trait StructRawSize {
+    fn get_raw_size(&self) -> usize;
+}
+
+impl StructRawSize for u8 {
+    fn get_raw_size(&self) -> usize {
+        std::mem::size_of::<u8>()
+    }
+}
+
+impl StructRawSize for u16 {
+    fn get_raw_size(&self) -> usize {
+        std::mem::size_of::<u16>()
+    }
+}
+
+impl StructRawSize for u32 {
+    fn get_raw_size(&self) -> usize {
+        std::mem::size_of::<u32>()
+    }
+}
+
+impl<T: StructRawSize, const C: usize> StructRawSize for [T; C] {
+    fn get_raw_size(&self) -> usize {
+        self.iter().map(|x| x.get_raw_size()).sum()
+    }
+}
+
+impl<T: StructRawSize> StructRawSize for Vec<T> {
+    fn get_raw_size(&self) -> usize {
+        self.iter().map(|x| x.get_raw_size()).sum()
+    }
+}
+
 /// Returns the smallest multiple of `align` greater than or equal to `self.size()`.
 ///
 /// This can return at most `isize::MAX + 1`
