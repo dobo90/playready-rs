@@ -2,8 +2,9 @@
 
 use super::{
     size_rounded_up_to_custom_align, until_exact_number_of_bytes, StructRawSize, StructTag,
+    ValueAndRaw,
 };
-use binrw::{BinRead, PosValue};
+use binrw::BinRead;
 use playready_macros::{StructRawSize, StructTag};
 
 #[derive(BinRead, StructTag, StructRawSize, Debug, Clone)]
@@ -281,5 +282,5 @@ pub struct BCertChain {
     pub flags: u32,
     pub certificate_count: u32,
     #[br(count = certificate_count)]
-    pub certificates: Vec<PosValue<BCert>>,
+    pub certificates: Vec<ValueAndRaw<BCert>>,
 }

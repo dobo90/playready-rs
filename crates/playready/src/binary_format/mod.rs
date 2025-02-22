@@ -5,10 +5,12 @@ pub mod device;
 pub mod pssh;
 pub mod xmr_license;
 
-use binrw::{BinRead, BinResult, Endian};
+use binrw::{BinRead, BinResult, BinWrite, Endian};
+use core::fmt;
 use std::{
-    io::{Read, Seek},
+    io::{Read, Seek, Write},
     iter::from_fn,
+    ops::{Deref, DerefMut},
 };
 
 pub trait StructTag {
@@ -111,5 +113,93 @@ where
         })
         .fuse()
         .collect()
+    }
+}
+
+#[derive(Clone)]
+pub struct ValueAndRaw<T> {
+    pub val: T,
+    pub raw: Vec<u8>,
+    pub use_raw: bool,
+}
+
+impl<T: BinRead> BinRead for ValueAndRaw<T> {
+    type Args<'a> = T::Args<'a>;
+
+    fn read_options<R: Read + Seek>(
+        reader: &mut R,
+        endian: Endian,
+        args: Self::Args<'_>,
+    ) -> BinResult<Self> {
+        let beg = reader.stream_position()?;
+        let val = T::read_options(reader, endian, args)?;
+        let end = reader.stream_position()?;
+
+        let len = usize::try_from(end - beg).unwrap();
+        let mut raw = vec![0u8; len];
+        reader.seek(std::io::SeekFrom::Start(beg))?;
+        reader.read_exact(&mut raw)?;
+
+        Ok(ValueAndRaw {
+            val,
+            raw,
+            use_raw: false,
+        })
+    }
+}
+
+impl<T: BinWrite> BinWrite for ValueAndRaw<T> {
+    type Args<'a> = T::Args<'a>;
+
+    fn write_options<W: Write + Seek>(
+        &self,
+        writer: &mut W,
+        endian: Endian,
+        args: Self::Args<'_>,
+    ) -> BinResult<()> {
+        match self.use_raw {
+            true => self.raw.write_options(writer, endian, ()),
+            false => self.val.write_options(writer, endian, args),
+        }
+    }
+}
+
+impl<T> Deref for ValueAndRaw<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.val
+    }
+}
+
+impl<T> DerefMut for ValueAndRaw<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.val
+    }
+}
+
+impl<T: fmt::Debug> std::fmt::Debug for ValueAndRaw<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.val.fmt(f)
+    }
+}
+
+impl<T> From<T> for ValueAndRaw<T> {
+    fn from(value: T) -> Self {
+        Self {
+            val: value,
+            raw: Vec::new(),
+            use_raw: false,
+        }
+    }
+}
+
+impl<T> From<(T, Vec<u8>)> for ValueAndRaw<T> {
+    fn from(value: (T, Vec<u8>)) -> Self {
+        Self {
+            val: value.0,
+            raw: value.1,
+            use_raw: false,
+        }
     }
 }

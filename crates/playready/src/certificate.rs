@@ -214,18 +214,7 @@ impl CertificateChain {
         for i in (0..self.parsed.certificates.len()).rev() {
             let bcert = &self.parsed.certificates[i];
 
-            let start = usize::try_from(bcert.pos)?;
-            let length = usize::try_from(bcert.total_length)?;
-            let raw = self
-                .raw
-                .get(start..start + length)
-                .ok_or(crate::Error::SliceOutOfBoundsError(
-                    "cert_chain.raw",
-                    self.raw.len(),
-                ))?
-                .to_vec();
-
-            let cert = Certificate::new(bcert.val.clone(), raw);
+            let cert = Certificate::new(bcert.val.clone(), bcert.raw.clone());
             cert.verify(&issuer_key)?;
 
             match cert.issuer_key() {
