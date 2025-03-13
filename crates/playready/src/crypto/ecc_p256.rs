@@ -31,6 +31,38 @@ impl<T: ToEncodedPoint<NistP256>> ToUntaggedBytes for T {
     }
 }
 
+pub trait FromBytes
+where
+    Self: Sized,
+{
+    type Error;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>;
+}
+
+impl FromBytes for Keypair {
+    type Error = crate::Error;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error> {
+        Ok(Keypair::from(
+            SecretKey::from_bytes(bytes).ok_or(crate::Error::P256DecodeError)?,
+        ))
+    }
+}
+
+impl FromBytes for VerifyingKey {
+    type Error = crate::Error;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let point = EncodedPoint::from_untagged_bytes(bytes.into());
+        let point = AffinePoint::from_encoded_point(&point)
+            .into_option()
+            .ok_or(crate::Error::P256DecodeError)?;
+
+        VerifyingKey::from_affine(point).or(Err(crate::Error::P256DecodeError))
+    }
+}
+
 pub fn wmrm_public_key() -> &'static PublicKey {
     static CELL: OnceLock<PublicKey> = OnceLock::new();
 
@@ -106,21 +138,6 @@ pub fn decrypt(private_key: &SecretKey, ciphertext: &[u8]) -> Result<Vec<u8>, cr
         .decrypt_to_element(encrypted)
         .to_untagged_bytes()
         .to_vec())
-}
-
-pub fn create_key_pair_from_bytes(private_key: &[u8]) -> Result<Keypair, crate::Error> {
-    Ok(Keypair::from(
-        SecretKey::from_bytes(private_key).ok_or(crate::Error::P256DecodeError)?,
-    ))
-}
-
-pub fn create_verifying_key_from_bytes(pub_key: &[u8]) -> Result<VerifyingKey, crate::Error> {
-    let point = EncodedPoint::from_untagged_bytes(pub_key.into());
-    let point = AffinePoint::from_encoded_point(&point)
-        .into_option()
-        .ok_or(crate::Error::P256DecodeError)?;
-
-    VerifyingKey::from_affine(point).or(Err(crate::Error::P256DecodeError))
 }
 
 pub fn verify(

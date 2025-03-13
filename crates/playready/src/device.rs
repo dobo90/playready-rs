@@ -3,7 +3,7 @@
 use crate::{
     binary_format::{self},
     certificate::CertificateChain,
-    crypto::ecc_p256::{self, Keypair, ToUntaggedBytes},
+    crypto::ecc_p256::{FromBytes, Keypair, ToUntaggedBytes},
 };
 use binrw::BinRead;
 use p256::ecdsa::SigningKey;
@@ -69,7 +69,7 @@ impl Device {
             Some(group_key) => Some(SigningKey::from_slice(&group_key[..32])?),
             None => None,
         };
-        let encryption_key = ecc_p256::create_key_pair_from_bytes(&encryption_key[..32])?;
+        let encryption_key = Keypair::from_bytes(&encryption_key[..32])?;
         let signing_key = SigningKey::from_slice(&signing_key[..32])?;
 
         Ok(Self {

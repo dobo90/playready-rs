@@ -9,12 +9,12 @@ use crate::{
         StructTag,
     },
     crypto::{
-        ecc_p256::{ToUntaggedBytes, SIGNATURE_SIZE},
+        ecc_p256::{FromBytes, ToUntaggedBytes, SIGNATURE_SIZE},
         sha256,
     },
 };
 use binrw::{BinRead, BinWrite};
-use p256::ecdsa::SigningKey;
+use p256::ecdsa::{SigningKey, VerifyingKey};
 use std::io::Cursor;
 
 use crate::{
@@ -106,7 +106,7 @@ impl Certificate {
         let msg_end = self.raw.len() - usize::try_from(attribute.length)?;
 
         ecc_p256::verify(
-            &ecc_p256::create_verifying_key_from_bytes(&sig_info.signature_key)?,
+            &VerifyingKey::from_bytes(&sig_info.signature_key)?,
             self.raw
                 .get(..msg_end)
                 .ok_or(crate::Error::SliceOutOfBoundsError(
