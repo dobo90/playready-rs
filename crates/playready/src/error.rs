@@ -20,6 +20,8 @@ pub enum Error {
     LicenseMissingError,
     #[error("Missing certificate in BCertChain")]
     CertificateMissingError,
+    #[error("Missing group key in device")]
+    GroupKeyMissingError,
     #[error("Slice out of bounds in {0} at length {1}")]
     SliceOutOfBoundsError(&'static str, usize),
     #[error("Parse error")]

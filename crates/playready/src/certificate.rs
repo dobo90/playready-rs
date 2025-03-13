@@ -1,7 +1,20 @@
 //! Helper structs for accessing BCert and BCertChain binary formats.
 
-use crate::binary_format::StructTag;
-use binrw::BinRead;
+use crate::{
+    binary_format::{
+        bcert::{
+            Attribute, DrmBCertDeviceInfo, DrmBCertFeatureInfo, DrmBCertKeyInfoInner,
+            PreprocessWrite,
+        },
+        StructTag,
+    },
+    crypto::{
+        ecc_p256::{ToUntaggedBytes, SIGNATURE_SIZE},
+        sha256,
+    },
+};
+use binrw::{BinRead, BinWrite};
+use p256::ecdsa::SigningKey;
 use std::io::Cursor;
 
 use crate::{
@@ -28,6 +41,10 @@ struct Certificate {
 impl Certificate {
     fn new(bcert: BCert, raw: Vec<u8>) -> Self {
         Self { parsed: bcert, raw }
+    }
+
+    fn into_bcert_and_raw(self) -> (BCert, Vec<u8>) {
+        (self.parsed, self.raw)
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, binrw::Error> {
@@ -99,6 +116,116 @@ impl Certificate {
             &sig_info.signature,
         )
         .map_err(|e| e.into())
+    }
+
+    pub fn new_leaf(
+        cert_id: [u8; 16],
+        client_id: [u8; 16],
+        security_level: u32,
+        manufacturer_info: Attribute,
+        public_signing_key: Vec<u8>,
+        public_encryption_key: Vec<u8>,
+        group_key: &SigningKey,
+    ) -> Result<Self, crate::Error> {
+        let public_group_key = group_key
+            .verifying_key()
+            .as_affine()
+            .to_untagged_bytes()
+            .to_vec();
+
+        let attributes = vec![
+            Attribute {
+                flags: 1,
+                inner: AttributeInner::DrmBCertBasicInfo(DrmBCertBasicInfo {
+                    cert_id,
+                    security_level,
+                    cert_type: 2,
+                    public_key_digest: sha256::hash(&public_signing_key).try_into().unwrap(),
+                    expiration_date: u32::MAX,
+                    client_id,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+            Attribute {
+                flags: 1,
+                inner: AttributeInner::DrmBCertDeviceInfo(DrmBCertDeviceInfo {
+                    max_license: 10240,
+                    max_header: 15360,
+                    max_chain_depth: 2,
+                }),
+                ..Default::default()
+            },
+            Attribute {
+                flags: 1,
+                inner: AttributeInner::DrmBCertFeatureInfo(DrmBCertFeatureInfo {
+                    features: vec![4, 9, 13],
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+            Attribute {
+                flags: 1,
+                inner: AttributeInner::DrmBCertKeyInfo(DrmBCertKeyInfo {
+                    cert_keys: vec![
+                        DrmBCertKeyInfoInner {
+                            type_: 1,
+                            key: public_signing_key,
+                            usages: vec![1],
+                            ..Default::default()
+                        },
+                        DrmBCertKeyInfoInner {
+                            type_: 1,
+                            key: public_encryption_key,
+                            usages: vec![2],
+                            ..Default::default()
+                        },
+                    ],
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+            manufacturer_info,
+            Attribute {
+                flags: 1,
+                inner: AttributeInner::DrmBCertSignatureInfo(DrmBCertSignatureInfo {
+                    signature_type: 1,
+                    signature: vec![0u8; SIGNATURE_SIZE],
+                    signature_key: public_group_key,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        ];
+
+        let mut cert = BCert {
+            version: 1,
+            attributes,
+            ..Default::default()
+        };
+
+        let mut raw = Vec::<u8>::new();
+        cert.preprocess_write();
+        cert.write(&mut Cursor::new(&mut raw))?;
+
+        let signature = ecc_p256::sign(
+            group_key,
+            raw.get(0..usize::try_from(cert.certificate_length)?)
+                .ok_or(crate::Error::SliceOutOfBoundsError("cert.raw", raw.len()))?,
+        );
+
+        assert!(signature.len() == SIGNATURE_SIZE);
+
+        if let AttributeInner::DrmBCertSignatureInfo(inner) =
+            &mut cert.attributes.last_mut().unwrap().inner
+        {
+            inner.signature.copy_from_slice(&signature)
+        }
+
+        raw.clear();
+        cert.write(&mut Cursor::new(&mut raw))?;
+
+        Ok(Self { parsed: cert, raw })
     }
 }
 
@@ -228,6 +355,76 @@ impl CertificateChain {
         }
 
         Ok(())
+    }
+
+    /// Provisions certificate chain by creating new leaf certificate.
+    pub fn provision(
+        mut self,
+        cert_id: [u8; 16],
+        client_id: [u8; 16],
+        public_signing_key: Vec<u8>,
+        public_encryption_key: Vec<u8>,
+        group_key: &SigningKey,
+    ) -> Result<Self, crate::Error> {
+        let public_group_key = group_key.verifying_key().as_affine().to_untagged_bytes();
+
+        self.parsed.certificates = self
+            .parsed
+            .certificates
+            .into_iter()
+            .skip_while(|c| {
+                Certificate::new(c.val.clone(), c.raw.clone())
+                    .issuer_key()
+                    .map(|c| c != *public_group_key)
+                    .unwrap_or(true)
+            })
+            .collect();
+
+        if self.parsed.certificates.is_empty() {
+            return Err(crate::Error::PublicKeyMismatchError("group key"));
+        }
+
+        let first_cert = self
+            .parsed
+            .certificates
+            .first()
+            .ok_or(crate::Error::CertificateMissingError)?;
+
+        let manufacturer_info = first_cert
+            .attributes
+            .iter()
+            .find(|a| a.tag == DrmBCertManufacturerInfo::TAG)
+            .ok_or(crate::Error::BinaryObjectNotFoundError(
+                "DrmBCertManufacturerInfo",
+            ))
+            .cloned()?;
+
+        let security_level = self.security_level()?;
+
+        let new_leaf = Certificate::new_leaf(
+            cert_id,
+            client_id,
+            security_level,
+            manufacturer_info,
+            public_signing_key,
+            public_encryption_key,
+            group_key,
+        )?;
+
+        self.parsed
+            .certificates
+            .insert(0, new_leaf.into_bcert_and_raw().into());
+
+        self.parsed
+            .certificates
+            .iter_mut()
+            .for_each(|c| c.use_raw = true);
+
+        self.parsed.preprocess_write();
+        self.raw.clear();
+        self.parsed.write(&mut Cursor::new(&mut self.raw))?;
+
+        Ok(self)
     }
 }
 

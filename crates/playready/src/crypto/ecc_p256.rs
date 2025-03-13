@@ -14,6 +14,23 @@ pub type PublicKey = elastic_elgamal::PublicKey<Generic<NistP256>>;
 pub type SecretKey = elastic_elgamal::SecretKey<Generic<NistP256>>;
 pub type Keypair = elastic_elgamal::Keypair<Generic<NistP256>>;
 
+pub const SIGNATURE_SIZE: usize = 64;
+
+pub trait ToUntaggedBytes {
+    fn to_untagged_bytes(&self) -> Box<[u8]>;
+}
+
+impl<T: ToEncodedPoint<NistP256>> ToUntaggedBytes for T {
+    fn to_untagged_bytes(&self) -> Box<[u8]> {
+        self.to_encoded_point(false)
+            .as_bytes()
+            .iter()
+            .copied()
+            .skip(1) // skip tag
+            .collect()
+    }
+}
+
 pub fn wmrm_public_key() -> &'static PublicKey {
     static CELL: OnceLock<PublicKey> = OnceLock::new();
 
