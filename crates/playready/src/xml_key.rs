@@ -1,5 +1,4 @@
-use crate::crypto::ecc_p256::{Keypair, PublicKey};
-use p256::elliptic_curve::sec1::ToEncodedPoint;
+use crate::crypto::ecc_p256::{Keypair, PublicKey, ToUntaggedBytes};
 
 #[derive(Debug, Clone)]
 pub struct XmlKey {
@@ -13,11 +12,10 @@ impl XmlKey {
         let mut rng = rand::thread_rng();
 
         let shared_point = Keypair::generate(&mut rng);
-        let public = shared_point.public().as_element().to_encoded_point(false);
-        let bytes = &public.as_bytes()[1..];
+        let public = shared_point.public().as_element().to_untagged_bytes();
 
-        let aes_iv = <[u8; 16]>::try_from(&bytes[..16]).unwrap();
-        let aes_key = <[u8; 16]>::try_from(&bytes[16..32]).unwrap();
+        let aes_iv = <[u8; 16]>::try_from(&public[..16]).unwrap();
+        let aes_key = <[u8; 16]>::try_from(&public[16..32]).unwrap();
 
         Self {
             shared_point,

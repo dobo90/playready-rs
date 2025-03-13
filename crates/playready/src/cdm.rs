@@ -2,7 +2,11 @@
 
 use crate::{
     binary_format::xmr_license::CipherType,
-    crypto::{aes, ecc_p256, sha256},
+    crypto::{
+        aes,
+        ecc_p256::{self, ToUntaggedBytes},
+        sha256,
+    },
     device::Device,
     license::License,
     pssh::WrmHeader,
@@ -10,7 +14,6 @@ use crate::{
     xml_utils,
 };
 use base64::{prelude::BASE64_STANDARD, Engine};
-use p256::elliptic_curve::sec1::ToEncodedPoint;
 use rand::{thread_rng, Rng};
 use std::{
     fmt,
@@ -211,8 +214,9 @@ impl Session {
             .device
             .signing_key()
             .verifying_key()
-            .to_encoded_point(false);
-        let public_key = BASE64_STANDARD.encode(&public_key.as_bytes()[1..]);
+            .as_affine()
+            .to_untagged_bytes();
+        let public_key = BASE64_STANDARD.encode(public_key);
 
         let challenge_tag = xml_utils::build_license_challenge(
             la_content_tag,
@@ -241,8 +245,7 @@ impl Session {
             .encryption_key()
             .public()
             .as_element()
-            .to_encoded_point(false);
-        let device_public_key = &device_public_key.as_bytes()[1..];
+            .to_untagged_bytes();
 
         let mut decrypted_keys = Vec::<KidCk>::with_capacity(licenses.len());
 
@@ -255,7 +258,7 @@ impl Session {
                 }
             };
 
-            if license.public_key()? != device_public_key {
+            if *license.public_key()? != *device_public_key {
                 return Err(crate::Error::PublicKeyMismatchError("device"));
             }
 

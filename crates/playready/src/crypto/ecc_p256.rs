@@ -53,10 +53,10 @@ pub fn encrypt(public_key: &PublicKey, plaintext: ProjectivePoint) -> Vec<u8> {
     let mut rng = rand::thread_rng();
     let ciphertext = public_key.encrypt_element(plaintext, &mut rng);
 
-    let point1 = ciphertext.random_element().to_encoded_point(false);
-    let point2 = ciphertext.blinded_element().to_encoded_point(false);
+    let point1 = ciphertext.random_element().to_untagged_bytes();
+    let point2 = ciphertext.blinded_element().to_untagged_bytes();
 
-    [&point1.as_bytes()[1..], &point2.as_bytes()[1..]].concat()
+    [point1, point2].concat()
 }
 
 pub fn decrypt(private_key: &SecretKey, ciphertext: &[u8]) -> Result<Vec<u8>, crate::Error> {
@@ -102,11 +102,10 @@ pub fn decrypt(private_key: &SecretKey, ciphertext: &[u8]) -> Result<Vec<u8>, cr
         );
     };
 
-    let point = private_key
+    Ok(private_key
         .decrypt_to_element(encrypted)
-        .to_encoded_point(false);
-
-    Ok(point.as_bytes()[1..].to_vec())
+        .to_untagged_bytes()
+        .to_vec())
 }
 
 pub fn create_key_pair_from_bytes(private_key: &[u8]) -> Result<Keypair, crate::Error> {
