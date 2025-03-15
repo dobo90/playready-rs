@@ -5,8 +5,9 @@ use crate::{
     certificate::CertificateChain,
     crypto::ecc_p256::{FromBytes, Keypair, ToUntaggedBytes},
 };
-use binrw::BinRead;
+use binrw::{BinRead, BinWrite};
 use p256::ecdsa::SigningKey;
+use p256::elliptic_curve::PrimeField;
 use rand::{thread_rng, Rng};
 use std::{
     fs::File,
@@ -182,6 +183,67 @@ impl Device {
         let group_key = group_key.ok_or(crate::Error::GroupKeyMissingError)?;
 
         Self::provision(cert_chain, group_key)
+    }
+
+    /// Creates and provisions device from file containing certificate chain
+    /// (usually named bgroupcert.dat) and file with group key (usually zgpriv.dat).
+    pub fn provision_from_files(
+        group_cert_path: impl AsRef<Path>,
+        group_key_path: impl AsRef<Path>,
+    ) -> Result<Self, crate::Error> {
+        let mut file = File::open(group_cert_path)?;
+        let mut bytes = Vec::<u8>::new();
+        file.read_to_end(&mut bytes)?;
+
+        let cert_chain = CertificateChain::from_bytes(&bytes)?;
+
+        file = File::open(group_key_path)?;
+        bytes.clear();
+        file.read_to_end(&mut bytes)?;
+
+        let group_key = SigningKey::from_slice(bytes.get(..32).ok_or(
+            crate::Error::SliceOutOfBoundsError("group_key", bytes.len()),
+        )?)?;
+
+        Self::provision(cert_chain, group_key)
+    }
+
+    /// Serializes and writes device to file specified by path.
+    pub fn write_to_file(&self, path: impl AsRef<Path>) -> Result<(), crate::Error> {
+        let mut group_key = [0u8; 96];
+        let mut encryption_key = [0u8; 96];
+        let mut signing_key = [0u8; 96];
+
+        group_key[..32].copy_from_slice(
+            &self
+                .group_key
+                .as_ref()
+                .ok_or(crate::Error::GroupKeyMissingError)?
+                .to_bytes(),
+        );
+
+        encryption_key[..32]
+            .copy_from_slice(&self.encryption_key.secret().expose_scalar().to_repr());
+        signing_key[..32].copy_from_slice(&self.signing_key.to_bytes());
+
+        let group_certificate = self.group_certificate().to_vec();
+        let group_certificate_length = u32::try_from(group_certificate.len()).unwrap();
+
+        let device = binary_format::device::Device {
+            version: 3,
+            inner: binary_format::device::DeviceInner::V3(binary_format::device::DeviceV3 {
+                group_key,
+                encryption_key,
+                signing_key,
+                group_certificate_length,
+                group_certificate,
+            }),
+        };
+
+        let mut file = File::create(path)?;
+        device.write(&mut file)?;
+
+        Ok(())
     }
 }
 
