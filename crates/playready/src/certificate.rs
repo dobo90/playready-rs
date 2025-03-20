@@ -15,7 +15,7 @@ use crate::{
 };
 use binrw::{BinRead, BinWrite};
 use p256::ecdsa::{SigningKey, VerifyingKey};
-use std::io::Cursor;
+use std::{borrow::Cow, io::Cursor};
 
 use crate::{
     binary_format::bcert::{
@@ -33,31 +33,32 @@ const ROOT_ISSUER_KEY: [u8; 64] = [
 ];
 
 #[derive(Debug, Clone)]
-struct Certificate {
-    parsed: BCert,
-    raw: Vec<u8>,
+struct Certificate<'a, 'b> {
+    parsed: Cow<'a, BCert>,
+    raw: Cow<'b, Vec<u8>>,
 }
 
-impl Certificate {
-    fn new(bcert: BCert, raw: Vec<u8>) -> Self {
+impl<'a, 'b> Certificate<'a, 'b> {
+    fn new(bcert: Cow<'a, BCert>, raw: Cow<'b, Vec<u8>>) -> Self {
         Self { parsed: bcert, raw }
     }
 
     fn into_bcert_and_raw(self) -> (BCert, Vec<u8>) {
-        (self.parsed, self.raw)
+        (self.parsed.into_owned(), self.raw.into_owned())
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, binrw::Error> {
-        let parsed = BCert::read(&mut Cursor::new(&bytes))?;
-        let raw = bytes.to_vec();
+        let parsed = Cow::Owned(BCert::read(&mut Cursor::new(&bytes))?);
+        let raw = Cow::Owned(bytes.to_vec());
 
         Ok(Self { parsed, raw })
     }
 
     pub fn from_vec(vec: Vec<u8>) -> Result<Self, binrw::Error> {
-        let parsed = BCert::read(&mut Cursor::new(&vec))?;
+        let parsed = Cow::Owned(BCert::read(&mut Cursor::new(&vec))?);
+        let raw = Cow::Owned(vec);
 
-        Ok(Self { parsed, raw: vec })
+        Ok(Self { parsed, raw })
     }
 
     fn issuer_key(&self) -> Option<Vec<u8>> {
@@ -225,11 +226,14 @@ impl Certificate {
         raw.clear();
         cert.write(&mut Cursor::new(&mut raw))?;
 
-        Ok(Self { parsed: cert, raw })
+        Ok(Self {
+            parsed: Cow::Owned(cert),
+            raw: Cow::Owned(raw),
+        })
     }
 }
 
-impl TryFrom<&[u8]> for Certificate {
+impl<'a, 'b> TryFrom<&[u8]> for Certificate<'a, 'b> {
     type Error = binrw::Error;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
@@ -237,7 +241,7 @@ impl TryFrom<&[u8]> for Certificate {
     }
 }
 
-impl TryFrom<Vec<u8>> for Certificate {
+impl<'a, 'b> TryFrom<Vec<u8>> for Certificate<'a, 'b> {
     type Error = binrw::Error;
 
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
@@ -341,7 +345,7 @@ impl CertificateChain {
         for i in (0..self.parsed.certificates.len()).rev() {
             let bcert = &self.parsed.certificates[i];
 
-            let cert = Certificate::new(bcert.val.clone(), bcert.raw.clone());
+            let cert = Certificate::new(Cow::Borrowed(&bcert.val), Cow::Borrowed(&bcert.raw));
             cert.verify(&issuer_key)?;
 
             match cert.issuer_key() {
@@ -373,7 +377,7 @@ impl CertificateChain {
             .certificates
             .into_iter()
             .skip_while(|c| {
-                Certificate::new(c.val.clone(), c.raw.clone())
+                Certificate::new(Cow::Borrowed(&c.val), Cow::Borrowed(&c.raw))
                     .issuer_key()
                     .map(|c| c != *public_group_key)
                     .unwrap_or(true)
