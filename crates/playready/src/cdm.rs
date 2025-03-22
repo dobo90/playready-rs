@@ -266,7 +266,7 @@ impl Session {
 
             decrypted_keys.extend(license.encrypted_keys().iter().filter_map(|encrypted_key| {
                 let (kid, ck, ci) = self
-                    .decrypt_key(encrypted_key, &aux_key)
+                    .decrypt_key(encrypted_key, aux_key)
                     .inspect_err(|e| log::error!("Failed to decrypt key: {e:?}"))
                     .ok()?;
 
@@ -292,8 +292,8 @@ impl Session {
 
     fn decrypt_key(
         &self,
-        encrypted_key: &(CipherType, [u8; 16], Vec<u8>),
-        aux_key: &Option<[u8; 16]>,
+        encrypted_key: &(CipherType, &[u8; 16], &[u8]),
+        aux_key: Option<&[u8; 16]>,
     ) -> Result<KidCkCi, crate::Error> {
         match encrypted_key.0 {
             CipherType::Ecc256 | CipherType::Ecc256WithKZ | CipherType::Ecc256ViaSymmetric => (),
@@ -302,7 +302,7 @@ impl Session {
             }
         };
 
-        let decrypted = ecc_p256::decrypt(self.device.encryption_key().secret(), &encrypted_key.2)?;
+        let decrypted = ecc_p256::decrypt(self.device.encryption_key().secret(), encrypted_key.2)?;
 
         let mut ci = decrypted
             .get(..16)
@@ -392,7 +392,7 @@ impl Session {
             }
         }
 
-        let uuid = Uuid::from_bytes_le(encrypted_key.1);
+        let uuid = Uuid::from_bytes_le(*encrypted_key.1);
         let kid = *uuid.as_bytes();
 
         Ok((

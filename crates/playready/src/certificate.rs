@@ -58,7 +58,7 @@ impl<'a, 'b> Certificate<'a, 'b> {
         Ok(Self { parsed, raw })
     }
 
-    fn issuer_key(&self) -> Option<Vec<u8>> {
+    fn issuer_key(&self) -> Option<&[u8]> {
         let attribute = self
             .parsed
             .attributes
@@ -74,7 +74,7 @@ impl<'a, 'b> Certificate<'a, 'b> {
             .cert_keys
             .iter()
             .find(|c| c.usages.contains(&6))
-            .map(|c| c.key.clone())
+            .map(|c| c.key.as_slice())
     }
 
     fn verify(&self, public_key: &[u8]) -> Result<(), crate::Error> {
@@ -341,7 +341,7 @@ impl CertificateChain {
             cert.verify(&issuer_key)?;
 
             match cert.issuer_key() {
-                Some(key) => issuer_key.copy_from_slice(&key),
+                Some(key) => issuer_key.copy_from_slice(key),
                 None => {
                     if i != 0 {
                         return Err(crate::Error::CertificateVerificationError(i));
@@ -371,7 +371,7 @@ impl CertificateChain {
             .skip_while(|c| {
                 Certificate::new(Cow::Borrowed(&c.val), Cow::Borrowed(&c.raw))
                     .issuer_key()
-                    .map(|c| c != *public_group_key)
+                    .map(|c| *c != *public_group_key)
                     .unwrap_or(true)
             })
             .collect();

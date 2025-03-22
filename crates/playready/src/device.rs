@@ -46,32 +46,33 @@ impl Device {
 
         let group_key = match &device.inner {
             binary_format::device::DeviceInner::V2(_) => None,
-            binary_format::device::DeviceInner::V3(v3) => Some(v3.group_key),
+            binary_format::device::DeviceInner::V3(v3) => Some(&v3.group_key),
         };
-
-        let encryption_key = match &device.inner {
-            binary_format::device::DeviceInner::V2(v2) => v2.encryption_key,
-            binary_format::device::DeviceInner::V3(v3) => v3.encryption_key,
-        };
-
-        let signing_key = match &device.inner {
-            binary_format::device::DeviceInner::V2(v2) => v2.signing_key,
-            binary_format::device::DeviceInner::V3(v3) => v3.signing_key,
-        };
-
-        let group_certificate = match &device.inner {
-            binary_format::device::DeviceInner::V2(v2) => v2.group_certificate.clone(),
-            binary_format::device::DeviceInner::V3(v3) => v3.group_certificate.clone(),
-        };
-
-        let cert_chain = CertificateChain::from_vec(group_certificate)?;
 
         let group_key = match group_key {
             Some(group_key) => Some(SigningKey::from_slice(&group_key[..32])?),
             None => None,
         };
+
+        let encryption_key = match &device.inner {
+            binary_format::device::DeviceInner::V2(v2) => &v2.encryption_key,
+            binary_format::device::DeviceInner::V3(v3) => &v3.encryption_key,
+        };
+
+        let signing_key = match &device.inner {
+            binary_format::device::DeviceInner::V2(v2) => &v2.signing_key,
+            binary_format::device::DeviceInner::V3(v3) => &v3.signing_key,
+        };
+
         let encryption_key = Keypair::from_bytes(&encryption_key[..32])?;
         let signing_key = SigningKey::from_slice(&signing_key[..32])?;
+
+        let group_certificate = match device.inner {
+            binary_format::device::DeviceInner::V2(v2) => v2.group_certificate,
+            binary_format::device::DeviceInner::V3(v3) => v3.group_certificate,
+        };
+
+        let cert_chain = CertificateChain::from_vec(group_certificate)?;
 
         Ok(Self {
             group_key,

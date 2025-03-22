@@ -61,18 +61,18 @@ impl License {
             .next()
     }
 
-    pub fn public_key(&self) -> Result<Vec<u8>, crate::Error> {
+    pub fn public_key(&self) -> Result<&[u8], crate::Error> {
         let ecc_key_object = self
             .find_key_object(ECCKeyObject::TAG)
             .ok_or(crate::Error::BinaryObjectNotFoundError("ECCKeyObject"))?;
 
         match &ecc_key_object.data {
-            XmrObjectInner::ECCKeyObject(inner) => Ok(inner.key.clone()),
+            XmrObjectInner::ECCKeyObject(inner) => Ok(inner.key.as_slice()),
             _ => Err(crate::Error::BinaryObjectNotFoundError("ECCKeyObject")),
         }
     }
 
-    pub fn auxiliary_key(&self) -> Option<[u8; 16]> {
+    pub fn auxiliary_key(&self) -> Option<&[u8; 16]> {
         let aux_key_object = self.find_key_object(AuxiliaryKeysObject::TAG)?;
 
         let aux_key_object = match &aux_key_object.data {
@@ -84,10 +84,10 @@ impl License {
             .map(|o| &o.auxiliary_keys)
             .map(|v| v.first())
             .unwrap_or(None)
-            .map(|aux| aux.key)
+            .map(|aux| &aux.key)
     }
 
-    pub fn encrypted_keys(&self) -> Vec<(CipherType, [u8; 16], Vec<u8>)> {
+    pub fn encrypted_keys(&self) -> Vec<(CipherType, &[u8; 16], &[u8])> {
         self.parsed
             .containers
             .iter()
@@ -114,11 +114,11 @@ impl License {
 
                 Some((
                     content_key_object.cipher_type,
-                    content_key_object.key_id,
-                    content_key_object.encrypted_key.clone(),
+                    &content_key_object.key_id,
+                    content_key_object.encrypted_key.as_slice(),
                 ))
             })
-            .collect::<Vec<(CipherType, [u8; 16], Vec<u8>)>>()
+            .collect()
     }
 
     pub fn cmac_verification_data(&self) -> Result<(&[u8], &[u8]), crate::Error> {
