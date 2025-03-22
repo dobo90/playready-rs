@@ -48,10 +48,7 @@ impl<'a, 'b> Certificate<'a, 'b> {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, binrw::Error> {
-        let parsed = Cow::Owned(BCert::read(&mut Cursor::new(&bytes))?);
-        let raw = Cow::Owned(bytes.to_vec());
-
-        Ok(Self { parsed, raw })
+        Self::from_vec(bytes.to_vec())
     }
 
     pub fn from_vec(vec: Vec<u8>) -> Result<Self, binrw::Error> {
@@ -71,15 +68,13 @@ impl<'a, 'b> Certificate<'a, 'b> {
         let cert_info = match &attribute.inner {
             AttributeInner::DrmBCertKeyInfo(inner) => Some(inner),
             _ => None,
-        }?;
+        };
 
-        for cert in &cert_info.cert_keys {
-            if cert.usages.contains(&6) {
-                return Some(cert.key.clone());
-            }
-        }
-
-        None
+        cert_info?
+            .cert_keys
+            .iter()
+            .find(|c| c.usages.contains(&6))
+            .map(|c| c.key.clone())
     }
 
     fn verify(&self, public_key: &[u8]) -> Result<(), crate::Error> {
@@ -259,10 +254,7 @@ pub struct CertificateChain {
 impl CertificateChain {
     /// Creates new `CertificateChain` from bytes.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, binrw::Error> {
-        let parsed = BCertChain::read(&mut Cursor::new(&bytes))?;
-        let raw = bytes.to_vec();
-
-        Ok(Self { parsed, raw })
+        Self::from_vec(bytes.to_vec())
     }
 
     /// Creates new `CertificateChain` from vector.
