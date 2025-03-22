@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use super::StructTag;
+use super::{until_exact_number_of_bytes, StructTag};
 use binrw::{helpers::until_eof, BinRead};
 use playready_macros::StructTag;
 
@@ -15,6 +15,42 @@ pub enum CipherType {
     TeeTransient = 0x0005,
     Ecc256ViaSymmetric = 0x0006,
     Unknown = 0xffff,
+}
+
+#[derive(BinRead, StructTag, Debug, Clone)]
+#[br(big, import(length: u32))]
+#[struct_tag(0x0001)]
+pub struct OuterContainer {
+    // 8 = sizeof(flags) + sizeof(type_) + sizeof(length)
+    #[br(parse_with = until_exact_number_of_bytes(u64::from(length - 8)))]
+    pub containers: Vec<XmrObject>,
+}
+
+#[derive(BinRead, StructTag, Debug, Clone)]
+#[br(big, import(length: u32))]
+#[struct_tag(0x0002)]
+pub struct GlobalPolicyContainer {
+    // 8 = sizeof(flags) + sizeof(type_) + sizeof(length)
+    #[br(parse_with = until_exact_number_of_bytes(u64::from(length - 8)))]
+    pub containers: Vec<XmrObject>,
+}
+
+#[derive(BinRead, StructTag, Debug, Clone)]
+#[br(big, import(length: u32))]
+#[struct_tag(0x0004)]
+pub struct PlaybackPolicyContainer {
+    // 8 = sizeof(flags) + sizeof(type_) + sizeof(length)
+    #[br(parse_with = until_exact_number_of_bytes(u64::from(length - 8)))]
+    pub containers: Vec<XmrObject>,
+}
+
+#[derive(BinRead, StructTag, Debug, Clone)]
+#[br(big, import(length: u32))]
+#[struct_tag(0x0009)]
+pub struct KeyMaterialContainer {
+    // 8 = sizeof(flags) + sizeof(type_) + sizeof(length)
+    #[br(parse_with = until_exact_number_of_bytes(u64::from(length - 8)))]
+    pub containers: Vec<XmrObject>,
 }
 
 #[derive(BinRead, StructTag, Debug, Clone)]
@@ -260,6 +296,14 @@ pub struct MoveObject {
 #[derive(BinRead, Debug, Clone)]
 #[br(big, import { type_: u16, length: u32})]
 pub enum XmrObjectInner {
+    #[br(pre_assert(type_ == OuterContainer::TAG))]
+    OuterContainer(#[br(args(length))] OuterContainer),
+    #[br(pre_assert(type_ == GlobalPolicyContainer::TAG))]
+    GlobalPolicyContainer(#[br(args(length))] GlobalPolicyContainer),
+    #[br(pre_assert(type_ == PlaybackPolicyContainer::TAG))]
+    PlaybackPolicyContainer(#[br(args(length))] PlaybackPolicyContainer),
+    #[br(pre_assert(type_ == KeyMaterialContainer::TAG))]
+    KeyMaterialContainer(#[br(args(length))] KeyMaterialContainer),
     #[br(pre_assert(type_ == OutputProtectionLevelRestrictionObject::TAG))]
     OutputProtectionLevelRestrictionObject(OutputProtectionLevelRestrictionObject),
     #[br(pre_assert(type_ == AnalogVideoOutputConfigurationRestriction::TAG))]
@@ -318,7 +362,8 @@ pub enum XmrObjectInner {
     SecureStopRestrictionObject(SecureStopRestrictionObject),
     #[br(pre_assert(type_ == DigitalVideoOutputRestrictionObject::TAG))]
     DigitalVideoOutputRestrictionObject(#[br(args(length))] DigitalVideoOutputRestrictionObject),
-    Unknown(#[br(count = length)] Vec<u8>),
+    // 8 = sizeof(flags) + sizeof(type_) + sizeof(length)
+    Unknown(#[br(count = length - 8)] Vec<u8>),
 }
 
 #[derive(BinRead, Debug, Clone)]
@@ -334,10 +379,9 @@ pub struct XmrObject {
 #[derive(BinRead, Debug, Clone)]
 #[br(big, magic = b"XMR\x00")]
 pub struct XmrLicense {
-    pub xmr_version: u32,
+    pub offset: u16,
+    pub version: u16,
     pub rights_id: [u8; 16],
-    // pyplayready is missing `unknown` field but somehow Python's construct manages to parse correctly
-    pub unknown: [u8; 16],
     #[br(parse_with = until_eof)]
     pub containers: Vec<XmrObject>,
 }

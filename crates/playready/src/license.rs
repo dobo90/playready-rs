@@ -1,6 +1,6 @@
 use crate::binary_format::xmr_license::{
     AuxiliaryKeysObject, CipherType, ContentKeyObject, ECCKeyObject, SignatureObject, XmrLicense,
-    XmrObjectInner,
+    XmrObject, XmrObjectInner,
 };
 use crate::binary_format::StructTag;
 use base64::{prelude::BASE64_STANDARD, Engine};
@@ -30,12 +30,40 @@ impl License {
         Ok(Self { parsed, raw })
     }
 
-    pub fn public_key(&self) -> Result<Vec<u8>, crate::Error> {
-        let ecc_key_object = self
-            .parsed
+    fn find_root_object(&self, tag: u16) -> Option<&XmrObject> {
+        self.parsed
             .containers
             .iter()
-            .find(|o| o.type_ == ECCKeyObject::TAG)
+            .filter_map(|o| match &o.data {
+                XmrObjectInner::OuterContainer(inner) => Some(inner.containers.iter()),
+                _ => None,
+            })
+            .flatten()
+            .find(|o| o.type_ == tag)
+    }
+
+    fn find_key_object(&self, tag: u16) -> Option<&XmrObject> {
+        self.parsed
+            .containers
+            .iter()
+            .filter_map(|o| match &o.data {
+                XmrObjectInner::OuterContainer(inner) => Some(inner.containers.iter()),
+                _ => None,
+            })
+            .flatten()
+            .filter_map(|o| match &o.data {
+                XmrObjectInner::KeyMaterialContainer(inner) => {
+                    Some(inner.containers.iter().filter(|o| o.type_ == tag))
+                }
+                _ => None,
+            })
+            .flatten()
+            .next()
+    }
+
+    pub fn public_key(&self) -> Result<Vec<u8>, crate::Error> {
+        let ecc_key_object = self
+            .find_key_object(ECCKeyObject::TAG)
             .ok_or(crate::Error::BinaryObjectNotFoundError("ECCKeyObject"))?;
 
         match &ecc_key_object.data {
@@ -45,11 +73,7 @@ impl License {
     }
 
     pub fn auxiliary_key(&self) -> Option<[u8; 16]> {
-        let aux_key_object = self
-            .parsed
-            .containers
-            .iter()
-            .find(|o| o.type_ == AuxiliaryKeysObject::TAG)?;
+        let aux_key_object = self.find_key_object(AuxiliaryKeysObject::TAG)?;
 
         let aux_key_object = match &aux_key_object.data {
             XmrObjectInner::AuxiliaryKeysObject(inner) => Some(inner),
@@ -67,7 +91,21 @@ impl License {
         self.parsed
             .containers
             .iter()
-            .filter(|o| o.type_ == ContentKeyObject::TAG)
+            .filter_map(|o| match &o.data {
+                XmrObjectInner::OuterContainer(inner) => Some(inner.containers.iter()),
+                _ => None,
+            })
+            .flatten()
+            .filter_map(|o| match &o.data {
+                XmrObjectInner::KeyMaterialContainer(inner) => Some(
+                    inner
+                        .containers
+                        .iter()
+                        .filter(|o| o.type_ == ContentKeyObject::TAG),
+                ),
+                _ => None,
+            })
+            .flatten()
             .filter_map(|xmr_object| {
                 let content_key_object = match &xmr_object.data {
                     XmrObjectInner::ContentKeyObject(inner) => Some(inner),
@@ -85,10 +123,7 @@ impl License {
 
     pub fn cmac_verification_data(&self) -> Result<(&[u8], Vec<u8>), crate::Error> {
         let signature_object = self
-            .parsed
-            .containers
-            .iter()
-            .find(|o| o.type_ == SignatureObject::TAG)
+            .find_root_object(SignatureObject::TAG)
             .ok_or(crate::Error::BinaryObjectNotFoundError("SignatureObject"))?;
 
         match &signature_object.data {
