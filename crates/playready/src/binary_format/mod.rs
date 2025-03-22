@@ -93,7 +93,7 @@ where
     Ret: FromIterator<T>,
 {
     move |reader, endian, args| {
-        let mut last = false;
+        let mut last = byte_count_limit == 0;
         let start_position = reader.stream_position().unwrap();
 
         from_fn(|| {
