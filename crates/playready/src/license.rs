@@ -151,3 +151,62 @@ impl TryFrom<&[u8]> for License {
         Self::from_bytes(value)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::License;
+    use crate::license::CipherType::Ecc256;
+
+    #[test]
+    fn parse_license_with_empty_playback_policy_container() {
+        let lic = License::from_b64(concat!(
+            "WE1SAAAAAAO6ZrBZY/dbvTGZkxnTjOH/AAMAAQAAAVAAAwACAAAAMgABAA0AAAAK",
+            "AAEAAAAzAAAACgABAAEAMgAAAAwAAAArAAEANAAAAAoH0AACAAQAAAAIAAMACQAA",
+            "APIAAQAKAAAAngEBAQEBAQEBAQEBAQEBAQEAAQADAIACAgICAgICAgICAgICAgIC",
+            "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC",
+            "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC",
+            "AgICAgICAgICAgICAgICAgAAACoAAABMAAEAQAMDAwMDAwMDAwMDAwMDAwMDAwMD",
+            "AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMAAQAL",
+            "AAAAHAABABAEBAQEBAQEBAQEBAQEBAQE"
+        ))
+        .unwrap();
+
+        assert_eq!(
+            lic.encrypted_keys(),
+            vec![(Ecc256, &[1u8; 16], [2u8; 128].as_slice())]
+        );
+        assert_eq!(lic.public_key().unwrap(), [3u8; 64].as_slice());
+        assert_eq!(
+            lic.cmac_verification_data().unwrap(),
+            (&lic.raw[..332], [4u8; 16].as_slice())
+        );
+        assert_eq!(lic.auxiliary_key(), None)
+    }
+
+    #[test]
+    fn parse_license_with_non_empty_playback_policy_container() {
+        let lic = License::from_b64(concat!(
+            "WE1SAAAAAAOOieG5U75vQ7O6VHqb06OGAAMAAQAAAYwAAwACAAAAXAABABIAAAAQ",
+            "AAAAAGeRPH8AAQAwAAAADAACowAAAAATAAAADGeQy/8AAAAaAAAADAABUYAAAAAz",
+            "AAAACgABAAEAMgAAAAwAAABNAAEANAAAAAoH0AACAAQAAAAaAAEABQAAABIB9AD6",
+            "AJYAZABkAAMACQAAAPIAAQAKAAAAngEBAQEBAQEBAQEBAQEBAQEAAQADAIACAgIC",
+            "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC",
+            "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC",
+            "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgAAACoAAABMAAEAQAMDAwMDAwMD",
+            "AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD",
+            "AwMDAwMDAwMAAQALAAAAHAABABAEBAQEBAQEBAQEBAQEBAQE"
+        ))
+        .unwrap();
+
+        assert_eq!(
+            lic.encrypted_keys(),
+            vec![(Ecc256, &[1u8; 16], [2u8; 128].as_slice())]
+        );
+        assert_eq!(lic.public_key().unwrap(), [3u8; 64].as_slice());
+        assert_eq!(
+            lic.cmac_verification_data().unwrap(),
+            (&lic.raw[..392], [4u8; 16].as_slice())
+        );
+        assert_eq!(lic.auxiliary_key(), None)
+    }
+}
