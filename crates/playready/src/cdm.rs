@@ -279,7 +279,7 @@ impl Session {
                     })
                     .ok()?;
 
-                aes::verify_cmac(ci.as_ref(), msg, &signature)
+                aes::verify_cmac(ci.as_ref(), msg, signature)
                     .inspect_err(|e| log::error!("Signature mismatch {e:?}. Skipping KID: {kid:?}"))
                     .ok()?;
 

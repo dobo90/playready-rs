@@ -121,7 +121,7 @@ impl License {
             .collect::<Vec<(CipherType, [u8; 16], Vec<u8>)>>()
     }
 
-    pub fn cmac_verification_data(&self) -> Result<(&[u8], Vec<u8>), crate::Error> {
+    pub fn cmac_verification_data(&self) -> Result<(&[u8], &[u8]), crate::Error> {
         let signature_object = self
             .find_root_object(SignatureObject::TAG)
             .ok_or(crate::Error::BinaryObjectNotFoundError("SignatureObject"))?;
@@ -136,7 +136,7 @@ impl License {
                             "signature.raw",
                             self.raw.len(),
                         ))?,
-                    inner.signature_data.clone(),
+                    &inner.signature_data,
                 ))
             }
             _ => Err(crate::Error::BinaryObjectNotFoundError("SignatureObject")),
