@@ -30,9 +30,21 @@ const TEST_SERVER_URL: &str =
     "https://test.playready.microsoft.com/service/rightsmanager.asmx?cfg=(persist:false,sl:2000)";
 
 #[derive(Subcommand)]
+#[allow(clippy::enum_variant_names)]
 enum Commands {
-    /// Tests the .prd device by connecting to the demo server provided by Microsoft.
+    /// Tests the .prd device by connecting to the demo server provided by Microsoft
     TestDevice { path: PathBuf },
+    /// Creates and provisions .prd device
+    CreateDevice {
+        #[arg(short('c'))]
+        group_certificate_path: PathBuf,
+        #[arg(short('k'))]
+        group_key_path: PathBuf,
+        #[arg(short('o'))]
+        output_path: PathBuf,
+    },
+    /// Reprovisions .prd device
+    ReprovisionDevice { path: PathBuf },
 }
 
 fn test_device(path: impl AsRef<Path>) -> Result<(), playready::Error> {
@@ -68,6 +80,37 @@ fn test_device(path: impl AsRef<Path>) -> Result<(), playready::Error> {
     Ok(())
 }
 
+fn provision_device(
+    group_certificate_path: impl AsRef<Path>,
+    group_key_path: impl AsRef<Path>,
+    output_path: impl AsRef<Path>,
+) -> Result<(), playready::Error> {
+    log::info!("Trying to provision device");
+    let device = Device::provision_from_files(group_certificate_path, group_key_path)?;
+
+    log::info!("Provisioned successfully");
+    log::info!("Device: {}", device.name()?);
+    log::info!("Security level: {}", device.security_level()?);
+
+    device.write_to_file(&output_path)?;
+
+    Ok(())
+}
+
+fn reprovision_device(path: impl AsRef<Path>) -> Result<(), playready::Error> {
+    let device = Device::from_prd(&path)?;
+
+    log::info!("Device: {}", device.name()?);
+    log::info!("Security level: {}", device.security_level()?);
+
+    let device = device.reprovision()?;
+    log::info!("Reprovisioned successfully");
+
+    device.write_to_file(&path)?;
+
+    Ok(())
+}
+
 fn main() {
     colog::default_builder()
         .filter(None, log::LevelFilter::Info)
@@ -78,6 +121,16 @@ fn main() {
     match cli.command {
         Commands::TestDevice { path } => test_device(path)
             .inspect_err(|e| log::error!("Test failed with an error: {e:?}"))
+            .unwrap_or_default(),
+        Commands::CreateDevice {
+            group_certificate_path,
+            group_key_path,
+            output_path,
+        } => provision_device(group_certificate_path, group_key_path, output_path)
+            .inspect_err(|e| log::error!("Failed to create device: {e:?}"))
+            .unwrap_or_default(),
+        Commands::ReprovisionDevice { path } => reprovision_device(path)
+            .inspect_err(|e| log::error!("Failed to reprovision device: {e:?}"))
             .unwrap_or_default(),
     }
 }
