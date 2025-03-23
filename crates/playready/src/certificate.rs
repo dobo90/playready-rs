@@ -244,7 +244,7 @@ impl<'a, 'b> TryFrom<Vec<u8>> for Certificate<'a, 'b> {
     }
 }
 
-/// Wrapper structure for `BCertChain` structure.
+/// Wrapper structure for `BCertChain` format.
 #[derive(Debug, Clone)]
 pub struct CertificateChain {
     parsed: BCertChain,
@@ -252,19 +252,19 @@ pub struct CertificateChain {
 }
 
 impl CertificateChain {
-    /// Creates new `CertificateChain` from bytes.
+    /// Creates new [`CertificateChain`] from bytes.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, binrw::Error> {
         Self::from_vec(bytes.to_vec())
     }
 
-    /// Creates new `CertificateChain` from vector.
+    /// Creates new [`CertificateChain`] from vector.
     pub fn from_vec(vec: Vec<u8>) -> Result<Self, binrw::Error> {
         let parsed = BCertChain::read(&mut Cursor::new(&vec))?;
 
         Ok(Self { parsed, raw: vec })
     }
 
-    /// Creates raw bytes of `CertificateChain`.
+    /// Creates raw bytes of [`CertificateChain`].
     pub fn raw(&self) -> &[u8] {
         &self.raw
     }
@@ -326,7 +326,7 @@ impl CertificateChain {
         }
     }
 
-    /// Performs signature verification of certificates bundled in `BCertChain`.
+    /// Performs signature verification of certificates.
     pub fn verify_certificates(&self) -> Result<(), crate::Error> {
         if self.parsed.certificates.is_empty() {
             return Err(crate::Error::CertificateMissingError);

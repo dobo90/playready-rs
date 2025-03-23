@@ -28,7 +28,7 @@ pub struct Pssh {
 }
 
 impl Pssh {
-    /// Creates `Pssh` from bytes.
+    /// Creates [`Pssh`] from bytes.
     pub fn from_bytes(b: &[u8]) -> Result<Self, binrw::Error> {
         let pssh_box = PSSHBox::read(&mut Cursor::new(b));
 
@@ -42,13 +42,13 @@ impl Pssh {
         }
     }
 
-    /// Creates `Pssh` from Base64 encoded bytes.
+    /// Creates [`Pssh`] from Base64 encoded bytes.
     pub fn from_b64(b64: &[u8]) -> Result<Self, crate::Error> {
         let bytes = BASE64_STANDARD.decode(b64)?;
         Self::from_bytes(&bytes).map_err(|e| e.into())
     }
 
-    /// Returns WRM headers parsed from `PSSHBox`.
+    /// Returns WRM headers parsed from `PSSHBox` or `PlayreadyObject` format.
     pub fn wrm_headers(&self) -> Vec<WrmHeader> {
         self.parsed
             .records

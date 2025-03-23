@@ -38,10 +38,10 @@ pub struct FfiKidCk {
     pub ck: repr_c::Box<[u8]>,
 }
 
-/// Creates new instance of `Cdm` from path to `.prd` file.
+/// Creates new instance of [`Cdm`] from path to `.prd` file.
 ///
-/// When successful function returns pointer to `Cdm` which needs to be deallocated by `playready_cdm_free`.
-/// Otherwise it returns `NULL` and pointer to `error_msg` that needs to be deallocated by `playready_error_message_free`.
+/// When successful function returns pointer to [`Cdm`] which needs to be deallocated by [`playready_cdm_free()`].
+/// Otherwise it returns `NULL` and pointer to `error_msg` that needs to be deallocated by [`playready_error_message_free()`].
 #[ffi_export]
 pub fn playready_cdm_create_from_prd(
     prd_path: char_p::Ref<'_>,
@@ -63,9 +63,9 @@ pub fn playready_cdm_create_from_prd(
     )
 }
 
-/// Creates new `Session`.
+/// Creates new [`Session`].
 ///
-/// Returned pointer should be deallocated by `playready_session_free`.
+/// Returned pointer should be deallocated by [`playready_session_free()`].
 #[ffi_export]
 pub fn playready_cdm_open_session(cdm: &FfiCdm) -> repr_c::Box<FfiSession> {
     Box::new(FfiSession {
@@ -74,10 +74,10 @@ pub fn playready_cdm_open_session(cdm: &FfiCdm) -> repr_c::Box<FfiSession> {
     .into()
 }
 
-/// Creates new instance of `Pssh` from bytes.
+/// Creates new instance of [`Pssh`] from bytes.
 ///
-/// When successful it returns a pointer to `Pssh` which needs to be deallocated by `playready_pssh_free`.
-/// If not successful it will return `NULL` and pointer to `error_msg` which needs to be deallocated by `playready_error_message_free`.
+/// When successful it returns a pointer to [`Pssh`] which needs to be deallocated by [`playready_pssh_free()`].
+/// If not successful it will return `NULL` and pointer to `error_msg` which needs to be deallocated by [`playready_error_message_free()`].
 #[ffi_export]
 pub fn playready_pssh_from_bytes(
     bytes: c_slice::Ref<'_, u8>,
@@ -92,10 +92,10 @@ pub fn playready_pssh_from_bytes(
     }
 }
 
-/// Creates new instance of `Pssh` from Base64 string.
+/// Creates new instance of [`Pssh`] from Base64 string.
 ///
-/// When successful it returns a pointer to `Pssh` which needs to be deallocated by `playready_pssh_free`.
-/// If not successful it will return `NULL` and pointer to `error_msg` which needs to be deallocated by `playready_error_message_free`.
+/// When successful it returns a pointer to [`Pssh`] which needs to be deallocated by [`playready_pssh_free()`].
+/// If not successful it will return `NULL` and pointer to `error_msg` which needs to be deallocated by [`playready_error_message_free()`].
 #[ffi_export]
 pub fn playready_pssh_from_b64(
     b64: char_p::Ref<'_>,
@@ -110,9 +110,9 @@ pub fn playready_pssh_from_b64(
     }
 }
 
-/// Extracts first wrm header from `Pssh`.
+/// Extracts first wrm header from [`Pssh`].
 ///
-/// Returned pointer should be passed to `playready_session_get_license_challenge` where it will be consumed (and deallocated).
+/// Returned pointer should be passed to [`playready_session_get_license_challenge()`] where it will be consumed (and deallocated).
 #[ffi_export]
 pub fn playready_pssh_get_first_wrm_header(pssh: &FfiPssh) -> Option<repr_c::Box<FfiWrmHeader>> {
     let wrm_headers = pssh.inner.wrm_headers();
@@ -123,8 +123,8 @@ pub fn playready_pssh_get_first_wrm_header(pssh: &FfiPssh) -> Option<repr_c::Box
 /// Returns license challenge.
 ///
 /// Function consumes and deallocates `wrm_header`. It's recommended to set `wrm_header` to `NULL` after calling this function.
-/// If successful returned pointer should be freed by `playready_license_challenge_free`.
-/// Otherwise it returns `error_msg` which needs to deallocated by `playready_error_message_free`.
+/// If successful returned pointer should be freed by [`playready_license_challenge_free()`].
+/// Otherwise it returns `error_msg` which needs to deallocated by [`playready_error_message_free()`].
 #[ffi_export]
 pub fn playready_session_get_license_challenge(
     session: &FfiSession,
@@ -144,8 +144,8 @@ pub fn playready_session_get_license_challenge(
 
 /// Returns keys from license response.
 ///
-/// If successful (`error_msg` != `NULL`) return value needs to be deallocated by `playready_keys_free`.
-/// Otherwise it return `error_msg` which needs to be deallocated by `playready_error_message_free`.
+/// If successful (`error_msg` != `NULL`) return value needs to be deallocated by [`playready_keys_free()`].
+/// Otherwise it return `error_msg` which needs to be deallocated by [`playready_error_message_free()`].
 #[ffi_export]
 pub fn playready_session_get_keys_from_challenge_response(
     session: &FfiSession,

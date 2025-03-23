@@ -25,7 +25,7 @@ pub struct Device {
 }
 
 impl Device {
-    /// Creates new `Device`.
+    /// Creates new [`Device`].
     pub fn new(
         group_key: Option<SigningKey>,
         encryption_key: Keypair,
@@ -40,7 +40,7 @@ impl Device {
         }
     }
 
-    /// Creates new `Device` from bytes.
+    /// Creates new [`Device`] from bytes.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, crate::Error> {
         let device = binary_format::device::Device::read(&mut Cursor::new(bytes))?;
 
@@ -82,7 +82,7 @@ impl Device {
         })
     }
 
-    /// Creates new `Device` from .prd file.
+    /// Creates new [`Device`] from .prd file.
     ///
     /// # Arguments
     ///
@@ -125,7 +125,7 @@ impl Device {
         self.cert_chain.security_level()
     }
 
-    /// Performs signature verification of certificates bundled in `BCertChain`.
+    /// Performs signature verification of certificates bundled in [`CertificateChain`].
     pub fn verify_certificates(&self) -> Result<(), crate::Error> {
         self.cert_chain.verify_certificates()
     }

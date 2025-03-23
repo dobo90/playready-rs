@@ -133,7 +133,7 @@ type KidCk = (KeyId, ContentKey);
 
 /// The entry point of PlayReady CDM.
 ///
-/// The easiest way to construct it is to use `from_device` function.
+/// The easiest way to construct it is to use [`Cdm::from_device()`] function.
 #[derive(Debug, Clone)]
 pub struct Cdm {
     device: Arc<Device>,
@@ -148,7 +148,7 @@ pub struct Session {
 }
 
 impl Cdm {
-    /// Creates CDM from the `Device`.
+    /// Creates CDM from the [`Device`].
     pub fn from_device(device: Device) -> Self {
         let device = Arc::new(device);
 
@@ -185,7 +185,7 @@ impl Session {
     ///
     /// # Arguments
     ///
-    /// `wrm_header` - header usually extracted from `Pssh`
+    /// `wrm_header` - header usually extracted from [`crate::pssh::Pssh`]
     pub fn get_license_challenge(&self, wrm_header: WrmHeader) -> Result<String, crate::Error> {
         let nonce = BASE64_STANDARD.encode(thread_rng().gen::<[u8; 16]>());
         let wmrm_cipher = BASE64_STANDARD.encode(self.key_data());
