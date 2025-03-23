@@ -14,6 +14,7 @@ pub type PublicKey = elastic_elgamal::PublicKey<Generic<NistP256>>;
 pub type SecretKey = elastic_elgamal::SecretKey<Generic<NistP256>>;
 pub type Keypair = elastic_elgamal::Keypair<Generic<NistP256>>;
 
+pub const SCALAR_SIZE: usize = 32;
 pub const SIGNATURE_SIZE: usize = 64;
 
 pub trait ToUntaggedBytes {

@@ -1,9 +1,9 @@
 //! Creating and parsing devices.
 
 use crate::{
-    binary_format::{self},
+    binary_format::{self, device::PRD_SCALAR_SIZE},
     certificate::CertificateChain,
-    crypto::ecc_p256::{FromBytes, Keypair, ToUntaggedBytes},
+    crypto::ecc_p256::{FromBytes, Keypair, ToUntaggedBytes, SCALAR_SIZE},
 };
 use binrw::{BinRead, BinWrite};
 use p256::ecdsa::SigningKey;
@@ -50,7 +50,7 @@ impl Device {
         };
 
         let group_key = match group_key {
-            Some(group_key) => Some(SigningKey::from_slice(&group_key[..32])?),
+            Some(group_key) => Some(SigningKey::from_slice(&group_key[..SCALAR_SIZE])?),
             None => None,
         };
 
@@ -64,8 +64,8 @@ impl Device {
             binary_format::device::DeviceInner::V3(v3) => &v3.signing_key,
         };
 
-        let encryption_key = Keypair::from_bytes(&encryption_key[..32])?;
-        let signing_key = SigningKey::from_slice(&signing_key[..32])?;
+        let encryption_key = Keypair::from_bytes(&encryption_key[..SCALAR_SIZE])?;
+        let signing_key = SigningKey::from_slice(&signing_key[..SCALAR_SIZE])?;
 
         let group_certificate = match device.inner {
             binary_format::device::DeviceInner::V2(v2) => v2.group_certificate,
@@ -202,7 +202,7 @@ impl Device {
         bytes.clear();
         file.read_to_end(&mut bytes)?;
 
-        let group_key = SigningKey::from_slice(bytes.get(..32).ok_or(
+        let group_key = SigningKey::from_slice(bytes.get(..SCALAR_SIZE).ok_or(
             crate::Error::SliceOutOfBoundsError("group_key", bytes.len()),
         )?)?;
 
@@ -211,11 +211,11 @@ impl Device {
 
     /// Serializes and writes device to file specified by path.
     pub fn write_to_file(&self, path: impl AsRef<Path>) -> Result<(), crate::Error> {
-        let mut group_key = [0u8; 96];
-        let mut encryption_key = [0u8; 96];
-        let mut signing_key = [0u8; 96];
+        let mut group_key = [0u8; PRD_SCALAR_SIZE];
+        let mut encryption_key = [0u8; PRD_SCALAR_SIZE];
+        let mut signing_key = [0u8; PRD_SCALAR_SIZE];
 
-        group_key[..32].copy_from_slice(
+        group_key[..SCALAR_SIZE].copy_from_slice(
             &self
                 .group_key
                 .as_ref()
@@ -223,9 +223,9 @@ impl Device {
                 .to_bytes(),
         );
 
-        encryption_key[..32]
+        encryption_key[..SCALAR_SIZE]
             .copy_from_slice(&self.encryption_key.secret().expose_scalar().to_repr());
-        signing_key[..32].copy_from_slice(&self.signing_key.to_bytes());
+        signing_key[..SCALAR_SIZE].copy_from_slice(&self.signing_key.to_bytes());
 
         let group_certificate = self.group_certificate().to_vec();
         let group_certificate_length = u32::try_from(group_certificate.len()).unwrap();

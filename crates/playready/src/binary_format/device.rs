@@ -2,22 +2,24 @@
 
 use binrw::{BinRead, BinWrite};
 
+pub const PRD_SCALAR_SIZE: usize = 96;
+
 #[derive(BinRead, BinWrite, Debug, Clone)]
 #[brw(big)]
 pub struct DeviceV2 {
     pub group_certificate_length: u32,
     #[br(count = group_certificate_length)]
     pub group_certificate: Vec<u8>,
-    pub encryption_key: [u8; 96],
-    pub signing_key: [u8; 96],
+    pub encryption_key: [u8; PRD_SCALAR_SIZE],
+    pub signing_key: [u8; PRD_SCALAR_SIZE],
 }
 
 #[derive(BinRead, BinWrite, Debug, Clone)]
 #[brw(big)]
 pub struct DeviceV3 {
-    pub group_key: [u8; 96],
-    pub encryption_key: [u8; 96],
-    pub signing_key: [u8; 96],
+    pub group_key: [u8; PRD_SCALAR_SIZE],
+    pub encryption_key: [u8; PRD_SCALAR_SIZE],
+    pub signing_key: [u8; PRD_SCALAR_SIZE],
     pub group_certificate_length: u32,
     #[br(count = group_certificate_length)]
     pub group_certificate: Vec<u8>,
