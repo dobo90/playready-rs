@@ -318,5 +318,5 @@ pub fn parse_challenge_response(text: &str) -> Result<Vec<String>, roxmltree::Er
         .descendants()
         .filter(|n| n.has_tag_name("License"))
         .filter_map(|n| n.text().map(String::from))
-        .collect::<Vec<_>>())
+        .collect())
 }

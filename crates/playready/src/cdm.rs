@@ -320,19 +320,14 @@ impl Session {
             .to_vec();
 
         if let Some(aux_key) = aux_key {
-            ci = decrypted
-                .iter()
-                .copied()
-                .step_by(2)
-                .take(16)
-                .collect::<Vec<u8>>();
+            ci = decrypted.iter().copied().step_by(2).take(16).collect();
             ck = decrypted
                 .iter()
                 .copied()
                 .skip(1)
                 .step_by(2)
                 .take(16)
-                .collect::<Vec<u8>>();
+                .collect();
 
             if encrypted_key.0 == CipherType::Ecc256ViaSymmetric {
                 let embedded_root_license =
