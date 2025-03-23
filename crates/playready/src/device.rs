@@ -127,7 +127,7 @@ impl Device {
 
     /// Performs signature verification of certificates bundled in [`CertificateChain`].
     pub fn verify_certificates(&self) -> Result<(), crate::Error> {
-        self.cert_chain.verify_certificates()
+        self.cert_chain.verify_signatures()
     }
 
     /// Creates and provisions device from certificate chain and group key.
@@ -163,7 +163,7 @@ impl Device {
             &group_key,
         )?;
 
-        cert_chain.verify_certificates()?;
+        cert_chain.verify_signatures()?;
 
         Ok(Self {
             group_key: Some(group_key),

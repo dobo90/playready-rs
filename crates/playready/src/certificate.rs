@@ -77,7 +77,7 @@ impl<'a, 'b> Certificate<'a, 'b> {
             .map(|c| c.key.as_slice())
     }
 
-    fn verify(&self, public_key: &[u8]) -> Result<(), crate::Error> {
+    fn verify_signature(&self, public_key: &[u8]) -> Result<(), crate::Error> {
         let attribute = self
             .parsed
             .attributes
@@ -326,8 +326,8 @@ impl CertificateChain {
         }
     }
 
-    /// Performs signature verification of certificates.
-    pub fn verify_certificates(&self) -> Result<(), crate::Error> {
+    /// Performs signature verification of all certificates.
+    pub fn verify_signatures(&self) -> Result<(), crate::Error> {
         if self.parsed.certificates.is_empty() {
             return Err(crate::Error::CertificateMissingError);
         }
@@ -338,7 +338,7 @@ impl CertificateChain {
             let bcert = &self.parsed.certificates[i];
 
             let cert = Certificate::new(Cow::Borrowed(&bcert.val), Cow::Borrowed(&bcert.raw));
-            cert.verify(&issuer_key)?;
+            cert.verify_signature(&issuer_key)?;
 
             match cert.issuer_key() {
                 Some(key) => issuer_key.copy_from_slice(key),
