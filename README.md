@@ -1,11 +1,10 @@
 # playready-rs
 
 Rust port of [pyplayready](https://github.com/ready-dl/pyplayready).
-Currently it does **not** support creating `.prd` files and device reprovisioning. Other functionality should be working fine.
 
 As a proof of concept it has been integrated with Kodi. Implementation is available on [fork of inputstream.adaptive](https://github.com/dobo90/inputstream.adaptive/tree/Omega-ossdrm/src/decrypters/playready).
 
-## Example usage:
+## Example code usage
 ```rust
 use isahc::{ReadResponseExt, Request, RequestExt};
 use playready::{cdm::Cdm, Device, Pssh};
@@ -51,12 +50,13 @@ fn main() {
 
     println!("Content keys:");
     for (kid, ck) in &keys {
-        println!("{}:{}", hex::encode(kid), hex::encode(ck));
+        println!("{}:{}", kid, ck);
     }
 }
 ```
 
-It also contains a simple CLI to test your `.prd` file by connecting to Microsoft's test server.
+## CLI
+If you want to test your `.prd` file by connecting to Microsoft's test server, run:
 ```
 $ cd crates/playready-cli
 $ cargo run test-device /path/to/device.prd
@@ -67,5 +67,24 @@ $ cargo run test-device /path/to/device.prd
 [*]     xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
+To create new .prd device run:
+```
+$ cd crates/playready-cli
+$ cargo run create-device -c /path/to/bgroupcert.dat -k /path/to/zgpriv.dat -o /path/to/output_device.prd
+[*] Trying to provision device
+[*] Provisioned successfully
+[*] Device: Test Device
+[*] Security level: 0000
+```
+
+In order to reprovision device:
+```
+$ cd crates/playready-cli
+$ cargo run reprovision-device /path/to/device.prd
+[*] Device: Test Device
+[*] Security level: 0000
+[*] Reprovisioned successfully
+```
+
 ## Documentation
-Available at [GitHub pages](https://dobo90.github.io/playready-rs/playready/index.html).
+Available at [GitHub pages](https://dobo90.github.io/playready-rs/playready/index.html) and [docs.rs](https://docs.rs/playready/latest/playready/).
